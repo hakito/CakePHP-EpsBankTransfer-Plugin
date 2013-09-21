@@ -49,7 +49,7 @@ class TransferInitiatorDetails
      * @param type $beneficiaryAccountIdentifier
      * @param type $referenceIdentifier
      * @param type $remittanceIdentifier
-     * @param type $instructedAmount
+     * @param int $instructedAmount in cents
      * @param type $webshopArticles
      * @param type $transferMsgDetails
      * @param type $date
@@ -76,6 +76,10 @@ class TransferInitiatorDetails
         $this->Date = $date == null ? date("Y-m-d") : $date;
     }
 
+    /**
+     * 
+     * @param int $amount in cents
+     */
     public function SetInstructedAmount($amount)
     {
         $this->InstructedAmount = FormatMonetaryXsdDecimal($amount);
