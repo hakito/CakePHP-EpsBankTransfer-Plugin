@@ -5,17 +5,42 @@ App::uses('HttpSocket', 'Network/Http');
 App::uses('Folder', 'Utility');
 App::uses('File', 'Utility');
 
+use at\externet\eps_bank_transfer;
+
 class EpsComponent extends Component
 {
 
     public $HttpSocket;
-
+    
+    /** @var eps_bank_transfer\WebshopArticle[] articles */
+    public $Articles = array();
+    
+    /** @var int total of amount to pay in cents */
+    public $Total = 0;
+    
     public function __construct($collection)
     {
         parent::__construct($collection);
         $this->HttpSocket = new HttpSocket();
     }
 
+    /**
+     * Add an article
+     * @param string $name
+     * @param int $count
+     * @param int $price in cents
+     */
+    public function AddArticle($name, $count, $price, $identifier = null)
+    {
+        $article = new eps_bank_transfer\WebshopArticle($name, $count, $price);
+        if ($identifier != null)        
+            $this->Articles[$identifier] = $article;
+        else        
+            $this->Articles[] = $article;
+        
+        $this->Total += (int) $count * (int) $price;
+    }            
+    
     /**
      * 
      * @return xml banks

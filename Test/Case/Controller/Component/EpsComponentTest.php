@@ -180,11 +180,37 @@ class EpsComponentTest extends CakeTestCase
         $transferInitiatorDetails = $this->getMockedTransferInitiatorDetails();        
         $this->httpPostReturns($this->at(0), $url, $this->stringContains('xml'), 'BankResponseDetailsInvalid.xml');
         $this->expectException('CakeException', "XML does not validate against XSD. Element '{http://www.stuzza.at/namespaces/eps/protocol/2011/11}ErrorCode': '12345' is not a valid value of the local atomic type.");
-        $this->Eps->SendPaymentOrder($transferInitiatorDetails, $url);
-        
+        $this->Eps->SendPaymentOrder($transferInitiatorDetails, $url);        
+    }
+    
+    public function testAddArticleAddsToArray()
+    {
+        $this->Eps->AddArticle('Name', 3, 45);
+        $this->assertIdentical(empty($this->Eps->Articles), false);
     }
 
+    public function testAddArticleAddWithIdentifier()
+    {
+        $this->Eps->AddArticle('Name', 3, 45, 'myarticle');
+        $this->assertEqual(isset($this->Eps->Articles['myarticle']), true);
+    }
+    
+    public function testAddArticleAddContent()
+    {
+        $this->Eps->AddArticle('Foo', 3, 5);
+        /** @var eps_bank_transfer\WebshopArticle */
+        $article = $this->Eps->Articles[0];
+        $this->assertIdentical($article->Name, "Foo");
+        $this->assertIdentical($article->Count, 3);
+        $this->assertIdentical($article->Price, "0.05");
+    }   
 
+    public function testAddArticleIncreasesTotal()
+    {
+        $this->Eps->AddArticle('Foo', 3, "7");
+        $this->assertIdentical($this->Eps->Total, 21);
+    }       
+    
     // HELPER FUNCTIONS
 
     private static function GetEpsData($filename)
