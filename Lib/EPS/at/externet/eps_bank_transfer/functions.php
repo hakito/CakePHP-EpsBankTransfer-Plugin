@@ -16,7 +16,16 @@ function FormatMonetaryXsdDecimal($val)
     }
 
     if (strlen($val) < 3)
-        return '.' . $val;
+    {
+        $prefix = '0.';
+        if (strlen($val) < 2)        
+            $prefix = '0.0';
+        
+        if (strlen($val) < 1)
+                return '0.00';            
+        
+        return $prefix . $val;
+    }
 
     $intVal = substr($val, 0, -2);
     $centVal = substr($val, -2);
