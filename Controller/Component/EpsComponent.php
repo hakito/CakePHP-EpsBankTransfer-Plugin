@@ -148,18 +148,26 @@ class EpsComponent extends Component
             }
         }
         
-        self::WriteLog('SendPaymentOrder [' . $referenceIdentifier . '] over ' . $transferInitiatorDetails->InstructedAmount );
+        $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
+        
+        self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount );
         $soAnswer = $this->SendPaymentOrder($transferInitiatorDetails, $bankUrl)->children("http://www.stuzza.at/namespaces/eps/protocol/2011/11");
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
+ 
+        
         
         if (('' . $errorDetails->ErrorCode) != '000')
         {
+            $errorCode = '' . $errorDetails->ErrorCode;
+            $errorMsg = '' . $errorDetails->ErrorMsg;
+            self::WriteLog($logPrefix .' Error ' . $errorCode . ' ' . $errorMsg, false);
             return array(
-                'ErrorCode' => '' . $errorDetails->ErrorCode,
-                'ErrorMsg' => '' . $errorDetails->ErrorMsg
+                'ErrorCode' => $errorCode,
+                'ErrorMsg' => $errorMsg
                 );
         }
         
+        self::WriteLog($logPrefix, true);
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
     }
 
