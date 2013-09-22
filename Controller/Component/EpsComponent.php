@@ -108,6 +108,15 @@ class EpsComponent extends Component
         return $this->GetCachedXMLElement($url, $xsd, $invalidateCache);
     }
 
+    /**
+     * Redirect to Online Banking
+     * @param string $remittanceIdentifier Identifier for the given order. For example shopping Order.id
+     * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
+     * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
+     * @param string $bankName optional bank name if the bank was already choosen on the site. If not given
+     * the user will be prompted later to select his bank
+     * @return array Error info array (ErrorCode, ErrorMsg) if the redirect failed
+     */
     public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankName = null)
     {
         $config = Configure::read('EpsBankTransfer');

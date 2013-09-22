@@ -5,6 +5,7 @@ App::uses('ComponentCollection', 'Controller');
 App::uses('HttpResponse', 'Network/Http');
 
 use at\externet\eps_bank_transfer;
+require_once EPS_BANK_TRANSFER_APP . 'Test' . DS . 'Helper.php';
 
 class EpsComponentTest extends CakeTestCase
 {
@@ -142,19 +143,19 @@ class EpsComponentTest extends CakeTestCase
 
     public function testGetValidatedSimpleXmlElment()
     {
-        $banks = EpsComponent::GetValidatedSimpleXmlElement(self::GetEpsData("BankListSample.xml"), 'epsSOBankListProtocol.xsd');
+        $banks = EpsComponent::GetValidatedSimpleXmlElement(eps_bank_transfer\GetEpsData("BankListSample.xml"), 'epsSOBankListProtocol.xsd');
         $this->assertEqual($banks->bank[0]->bic, "TESTBANKXXX");
     }
 
     public function testGetInvalidSimpleXmlElementThrowsException()
     {
         $this->expectException('CakeException', "XML does not validate against XSD. Element '{http://www.eps.or.at/epsSO/epsSOBankListProtocol/201008}book': This element is not expected. Expected is ( {http://www.eps.or.at/epsSO/epsSOBankListProtocol/201008}bic");
-        EpsComponent::GetValidatedSimpleXmlElement(self::GetEpsData("BankListInvalid.xml"), 'epsSOBankListProtocol.xsd');
+        EpsComponent::GetValidatedSimpleXmlElement(eps_bank_transfer\GetEpsData("BankListInvalid.xml"), 'epsSOBankListProtocol.xsd');
     }
 
     public function testGenerateTransferIinitiatorDetails()
     {
-        $eSimpleXml = EpsComponent::GetValidatedSimpleXmlElement(self::GetEpsData('TransferInitiatorDetailsWithoutSignature.xml'), 'EPSProtocol-V24.xsd');
+        $eSimpleXml = EpsComponent::GetValidatedSimpleXmlElement(eps_bank_transfer\GetEpsData('TransferInitiatorDetailsWithoutSignature.xml'), 'EPSProtocol-V24.xsd');
 
         $webshopArticle = new eps_bank_transfer\WebshopArticle("Toaster", 1, 15000);
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails("http://10.18.70.8:7001/vendorconfirmation", "http://10.18.70.8:7001/transactionok?danke.asp", "http://10.18.70.8:7001/transactionnok?fehler.asp");
@@ -179,7 +180,7 @@ class EpsComponentTest extends CakeTestCase
         $transferInitiatorDetails = $this->getMockedTransferInitiatorDetails();        
         $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetails004.xml');
         $actual = $this->Eps->SendPaymentOrder($transferInitiatorDetails); 
-        $this->assertEqual($actual->asXml(), self::GetEpsData('BankResponseDetails004.xml'));
+        $this->assertEqual($actual->asXml(), eps_bank_transfer\GetEpsData('BankResponseDetails004.xml'));
     }
     
     public function testPaymentOrderThrowsExceptionOn404()
@@ -264,13 +265,6 @@ class EpsComponentTest extends CakeTestCase
     
     // HELPER FUNCTIONS
 
-    private static function GetEpsData($filename)
-    {
-        
-        $file = new File(EPS_BANK_TRANSFER_APP . 'Test' . DS . 'Case' . DS . 'Controller' . DS . 'Component' . DS . 'EpsData' . DS . $filename);
-        return $file->read();
-    }
-
     private function httpPostReturns($times, $url, $post, $responseFile, $code = 200)
     {
         $this->Eps->HttpSocket->expects($times)
@@ -290,7 +284,7 @@ class EpsComponentTest extends CakeTestCase
     private static function getHttpResponse($responseFile, $code = 200)
     {
         $response = new HttpResponse();
-        $response->body = EpsComponentTest::GetEpsData($responseFile);
+        $response->body = eps_bank_transfer\GetEpsData($responseFile);
         $response->code = $code;
         return $response;
     }
