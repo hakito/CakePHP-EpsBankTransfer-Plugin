@@ -112,13 +112,11 @@ class TransferInitiatorDetails
         $TransactionOkUrl = $TransferMsgDetails->addChildExt('TransactionOkUrl', $this->TransferMsgDetails->TransactionOkUrl, 'epsp');
         $TransactionNokUrl = $TransferMsgDetails->addChildExt('TransactionNokUrl', $this->TransferMsgDetails->TransactionNokUrl, 'epsp');
 
-        if (!empty($this->TransferMsgDetails->TargetWindowOk))
-            ;
-        $TransactionOkUrl->addAttribute('TargetWindow', $this->TransferMsgDetails->TargetWindowOk);
+        if (!empty($this->TransferMsgDetails->TargetWindowOk))            
+            $TransactionOkUrl->addAttribute('TargetWindow', $this->TransferMsgDetails->TargetWindowOk);
 
-        if (!empty($this->TransferMsgDetails->TargetWindowNok))
-            ;
-        $TransactionNokUrl->addAttribute('TargetWindow', $this->TransferMsgDetails->TargetWindowNok);
+        if (!empty($this->TransferMsgDetails->TargetWindowNok))            
+            $TransactionNokUrl->addAttribute('TargetWindow', $this->TransferMsgDetails->TargetWindowNok);
 
         $WebshopDetails = $TransferInitiatorDetails->addChildExt('WebshopDetails', '', 'epsp');
 

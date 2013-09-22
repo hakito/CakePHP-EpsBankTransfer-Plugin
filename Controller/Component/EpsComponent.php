@@ -11,19 +11,29 @@ class EpsComponent extends Component
 {
 
     public $HttpSocket;
-    
+
     /** @var eps_bank_transfer\WebshopArticle[] articles */
     public $Articles = array();
-    
+
     /** @var int total of amount to pay in cents */
     public $Total = 0;
-    
+
+    /** @var string prefix for caching keys in this component */
     public $CacheKeyPrefix = 'EpsBankTransferComponent';
+
+    /** @var \Controller */
+    private $Controller = null;
     
     public function __construct($collection)
     {
         parent::__construct($collection);
         $this->HttpSocket = new HttpSocket();
+    }
+    
+    public function startup(\Controller $controller)
+    {
+        parent::startup($controller);
+        $this->Controller = $controller;
     }
 
     /**
@@ -35,14 +45,14 @@ class EpsComponent extends Component
     public function AddArticle($name, $count, $price, $identifier = null)
     {
         $article = new eps_bank_transfer\WebshopArticle($name, $count, $price);
-        if ($identifier != null)        
+        if ($identifier != null)
             $this->Articles[$identifier] = $article;
-        else        
+        else
             $this->Articles[] = $article;
-        
+
         $this->Total += (int) $count * (int) $price;
-    }            
-    
+    }
+
     /**
      * Get banks as associative array
      * @param type $invalidateCache
@@ -63,14 +73,14 @@ class EpsComponent extends Component
                     'bic' => '' . $xmlBank->bic,
                     'bezeichnung' => $bezeichnung,
                     'land' => '' . $xmlBank->land,
-                    'epsUrl' => '' . $xmlBank->epsUrl, 
-                    );
+                    'epsUrl' => '' . $xmlBank->epsUrl,
+                );
             }
             Cache::write($key, $banks);
         }
         return $banks;
     }
-    
+
     /**
      * Failsafe version of GetBanksArray()
      * @return null or result of GetBanksArray()
@@ -86,7 +96,7 @@ class EpsComponent extends Component
             return null;
         }
     }
-    
+
     /**
      * Get BankList as SimpleXml object
      * @return SimpleXMLElement banks
@@ -96,6 +106,52 @@ class EpsComponent extends Component
         $url = 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4';
         $xsd = self::GetXSD('epsSOBankListProtocol.xsd');
         return $this->GetCachedXMLElement($url, $xsd, $invalidateCache);
+    }
+
+    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankName = null)
+    {
+        $config = Configure::read('EpsBankTransfer');
+        $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
+        $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
+                        Router::url('/eps_bank_transfer/process', true),
+                        $TransactionOkUrl,
+                        $TransactionNokUrl
+        );
+        $transferInitiatorDetails = new eps_bank_transfer\TransferInitiatorDetails(
+                        $config['userid'],
+                        $config['secret'],
+                        $config['bic'],
+                        $config['account_owner'],
+                        $config['iban'],
+                        $referenceIdentifier,
+                        $remittanceIdentifier,
+                        $this->Total,
+                        $this->Articles,
+                        $transferMsgDetails);
+        $bankUrl = null;
+        
+        if (!empty($bankName))
+        {
+            $banks = $this->GetBanksArrayOrNull();
+            if ($banks != null)
+            {
+                $bankUrl = $banks[$bankName]['epsUrl'];
+            }
+        }
+        
+        self::WriteLog('SendPaymentOrder [' . $referenceIdentifier . '] over ' . $transferInitiatorDetails->InstructedAmount );
+        $soAnswer = $this->SendPaymentOrder($transferInitiatorDetails, $bankUrl)->children("http://www.stuzza.at/namespaces/eps/protocol/2011/11");
+        $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
+        
+        if (('' . $errorDetails->ErrorCode) != '000')
+        {
+            return array(
+                'ErrorCode' => '' . $errorDetails->ErrorCode,
+                'ErrorMsg' => '' . $errorDetails->ErrorMsg
+                );
+        }
+        
+        return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
     }
 
     /**
@@ -109,9 +165,10 @@ class EpsComponent extends Component
         if ($targetUrl == null)
             $targetUrl = 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4';
 
-        $data = $transferInitiatorDetails->GetSimpleXml()->asXML();
-        $response = $this->PostUrlLogged($targetUrl, $data, 'Send payment order');
-        
+        $data = $transferInitiatorDetails->GetSimpleXml();
+        $xmlData = $data->asXML();
+        $response = $this->PostUrlLogged($targetUrl, $xmlData, 'Send payment order');
+
         $simpleXml = self::GetValidatedSimpleXmlElement($response->body, 'EPSProtocol-V24.xsd');
         return $simpleXml;
     }
@@ -134,7 +191,7 @@ class EpsComponent extends Component
         $xml = Cache::read($key);
         if (!$xml || $invalidateCache)
         {
-            $response = $this->GetUrlLogged($url, 'Requesting bank list');          
+            $response = $this->GetUrlLogged($url, 'Requesting bank list');
             $xml = $response->body;
             if ($xsd != null)
                 self::ValidateXml($xml, $xsd);
@@ -148,17 +205,17 @@ class EpsComponent extends Component
     {
         self::WriteLog($message);
         $response = $this->HttpSocket->post($url, $data, array('header' => array('Content-Type' => 'text/plain; charset=UTF-8')));
-        
+
         if ($response->code != 200)
         {
             self::WriteLog($message, false);
             throw new CakeException('Could not load document. Server returned code: ' . $response->code);
         }
-            
+
         self::WriteLog($message, true);
         return $response;
     }
-    
+
     private function GetUrlLogged($url, $message)
     {
         self::WriteLog($message);
@@ -181,7 +238,7 @@ class EpsComponent extends Component
 
     private static function ValidateXml($xml, $xsd)
     {
-        $message = 'Validating XML with '.$xsd;
+        $message = 'Validating XML with ' . $xsd;
         self::WriteLog($message);
         $doc = new DOMDocument();
         $doc->loadXml($xml);

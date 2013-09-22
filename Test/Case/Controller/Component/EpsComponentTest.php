@@ -235,6 +235,33 @@ class EpsComponentTest extends CakeTestCase
         $this->assertIdentical($this->Eps->Total, 21);
     }       
     
+    public function testPaymentRedirectInvalidXml()
+    {
+        $this->Eps->AddArticle('Foo', 3, "7");
+        $this->expectException('CakeException', "XML does not validate against XSD. Element '{http://www.stuzza.at/namespaces/eps/protocol/2011/11}ErrorCode': '12345' is not a valid value of the local atomic type.");
+        $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetailsInvalid.xml');
+        $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+    }
+    
+    public function testPaymentRedirectErrorResponse()
+    {
+        $this->Eps->AddArticle('Foo', 3, "7");
+        $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetails004.xml');
+        $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+        $expected = array('ErrorCode' => '004', 'ErrorMsg' => 'merchant not found!');
+        $this->assertEqual($actual, $expected);
+    }
+    
+    public function testPaymentRedirectSuccess()
+    {
+        $controller = $this->getMock('Controller', array('redirect'));
+        $this->Eps->startUp($controller);
+        $this->Eps->AddArticle('Foo', 3, "7");
+        $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetails000.xml');
+        $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+        $this->assertEqual($actual, null);        
+    }
+    
     // HELPER FUNCTIONS
 
     private static function GetEpsData($filename)
