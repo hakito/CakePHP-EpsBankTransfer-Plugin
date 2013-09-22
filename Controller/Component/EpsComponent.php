@@ -43,6 +43,11 @@ class EpsComponent extends Component
         $this->Total += (int) $count * (int) $price;
     }            
     
+    /**
+     * Get banks as associative array
+     * @param type $invalidateCache
+     * @return array
+     */
     public function GetBanksArray($invalidateCache = false)
     {
         $key = $this->CacheKeyPrefix . 'BanksArray';
@@ -67,30 +72,30 @@ class EpsComponent extends Component
     }
     
     /**
-     * 
-     * @return xml banks
+     * Failsafe version of GetBanksArray()
+     * @return null or result of GetBanksArray()
+     */
+    public function GetBanksArrayOrNull($invalidateCache = false)
+    {
+        try
+        {
+            return $this->GetBanksArray($invalidateCache);
+        }
+        catch (CakeException $e)
+        {
+            return null;
+        }
+    }
+    
+    /**
+     * Get BankList as SimpleXml object
+     * @return SimpleXMLElement banks
      */
     public function GetBanksXml($invalidateCache = false)
     {
         $url = 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4';
         $xsd = self::GetXSD('epsSOBankListProtocol.xsd');
         return $this->GetCachedXMLElement($url, $xsd, $invalidateCache);
-    }
-
-    /**
-     * Failsafe version of GetBanks()
-     * @return null or result of GetBanks()
-     */
-    public function GetBanksOrNull()
-    {
-        try
-        {
-            return $this->GetBanksXml();
-        }
-        catch (CakeException $e)
-        {
-            return null;
-        }
     }
 
     /**

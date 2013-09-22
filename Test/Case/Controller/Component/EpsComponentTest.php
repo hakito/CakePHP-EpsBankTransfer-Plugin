@@ -126,17 +126,17 @@ class EpsComponentTest extends CakeTestCase
         $this->assertEqual($banks->bank[0]->bic, "TESTBANKXXX");
     }
 
-    public function testGetBanksOrNullReturnsBanks()
+    public function testGetBanksArrayOrNullReturnsBanks()
     {
         $this->httpGetReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListSample.xml');
-        $banks = $this->Eps->GetBanksOrNull();
-        $this->assertEqual($banks->bank[0]->bic, "TESTBANKXXX");
+        $banks = $this->Eps->GetBanksArrayOrNull();
+        $this->assertEqual($banks['Testbank']['bic'], "TESTBANKXXX");
     }
 
-    public function testGetBanksOrNullReturnsNull()
+    public function testGetBanksArrayOrNullReturnsNull()
     {
         $this->httpGetReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListInvalid.xml');
-        $banks = $this->Eps->GetBanksOrNull();
+        $banks = $this->Eps->GetBanksArrayOrNull();
         $this->assertEqual($banks, null);
     }
 
