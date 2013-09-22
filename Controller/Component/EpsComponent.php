@@ -18,6 +18,8 @@ class EpsComponent extends Component
     /** @var int total of amount to pay in cents */
     public $Total = 0;
     
+    public $CacheKeyPrefix = 'EpsBankTransferComponent';
+    
     public function __construct($collection)
     {
         parent::__construct($collection);
@@ -41,15 +43,38 @@ class EpsComponent extends Component
         $this->Total += (int) $count * (int) $price;
     }            
     
+    public function GetBanksArray($invalidateCache = false)
+    {
+        $key = $this->CacheKeyPrefix . 'BanksArray';
+        $banks = Cache::read($key);
+        if (!$banks || $invalidateCache)
+        {
+            $xmlBanks = $this->GetBanksXml($invalidateCache);
+            $banks = array();
+            foreach ($xmlBanks as $xmlBank)
+            {
+                $bezeichnung = '' . $xmlBank->bezeichnung;
+                $banks[$bezeichnung] = array(
+                    'bic' => '' . $xmlBank->bic,
+                    'bezeichnung' => $bezeichnung,
+                    'land' => '' . $xmlBank->land,
+                    'epsUrl' => '' . $xmlBank->epsUrl, 
+                    );
+            }
+            Cache::write($key, $banks);
+        }
+        return $banks;
+    }
+    
     /**
      * 
      * @return xml banks
      */
-    public function GetBanks()
+    public function GetBanksXml($invalidateCache = false)
     {
         $url = 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4';
         $xsd = self::GetXSD('epsSOBankListProtocol.xsd');
-        return $this->GetCachedXMLElement($url, $xsd);
+        return $this->GetCachedXMLElement($url, $xsd, $invalidateCache);
     }
 
     /**
@@ -60,7 +85,7 @@ class EpsComponent extends Component
     {
         try
         {
-            return $this->GetBanks();
+            return $this->GetBanksXml();
         }
         catch (CakeException $e)
         {
@@ -98,17 +123,18 @@ class EpsComponent extends Component
         return EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'XSD' . DS . $filename;
     }
 
-    private function GetCachedXMLElement($url, $xsd = null)
+    private function GetCachedXMLElement($url, $xsd = null, $invalidateCache = false)
     {
-        $xml = Cache::read($url);
-        if (!$xml)
+        $key = $this->CacheKeyPrefix . $url;
+        $xml = Cache::read($key);
+        if (!$xml || $invalidateCache)
         {
             $response = $this->GetUrlLogged($url, 'Requesting bank list');          
             $xml = $response->body;
             if ($xsd != null)
                 self::ValidateXml($xml, $xsd);
 
-            Cache::write($url, $xml);
+            Cache::write($key, $xml);
         }
         return new SimpleXMLElement($xml);
     }

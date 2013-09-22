@@ -23,19 +23,43 @@ class EpsComponentTest extends CakeTestCase
         $this->Eps->HttpSocket = $this->getMock('HttpSocket');//new MockHttpSocket();
         Cache::clear();
     }
-
+    
+    public function testGetBanksArray()
+    {
+        $this->httpGetReturns($this->once(), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListSample.xml');
+        $banks = $this->Eps->GetBanksArray();
+        $this->assertEqual($banks['Testbank']['bic'], "TESTBANKXXX");
+    }
+    
+    public function testGetBanksArrayCached()
+    {
+        $expected = 'Foo';
+        Cache::write($this->Eps->CacheKeyPrefix . 'BanksArray', $expected);
+        $actual = $this->Eps->GetBanksArray();
+        $this->assertEqual($actual, $expected);        
+    }
+    
+    public function testGetBanksArrayInvalidateCache()
+    {
+        $expected = 'Foo';
+        $this->httpGetReturns($this->once(), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListSample.xml');
+        Cache::write($this->Eps->CacheKeyPrefix . 'BanksArray', $expected);
+        $actual = $this->Eps->GetBanksArray(true);
+        $this->assertNotEqual($actual, $expected);
+    }
+    
     public function testGetBanklistBic()
     {
         $this->httpGetReturns($this->once(), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListSample.xml');
-        $banks = $this->Eps->GetBanks();
+        $banks = $this->Eps->GetBanksXml();
         $this->assertEqual($banks->bank[0]->bic, "TESTBANKXXX");
     }
 
     public function testGetBankListTwice()
     {
         $this->httpGetReturns($this->once(), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListSample.xml');
-        $this->Eps->GetBanks();
-        $banks = $this->Eps->GetBanks();
+        $this->Eps->GetBanksXml();
+        $banks = $this->Eps->GetBanksXml();
         $this->assertEqual($banks->bank[0]->bic, "TESTBANKXXX");
     }
 
@@ -43,14 +67,14 @@ class EpsComponentTest extends CakeTestCase
     {
         $this->expectException('CakeException', 'Could not load document. Server returned code: 404');
         $this->httpGetReturns($this->once(), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListSample.xml', 404);
-        $this->Eps->GetBanks();
+        $this->Eps->GetBanksXml();
     }
    
     public function testGetInvalidXmlResponseError()
     {
         $this->expectException('CakeException', "XML does not validate against XSD. Element '{http://www.eps.or.at/epsSO/epsSOBankListProtocol/201008}book': This element is not expected. Expected is ( {http://www.eps.or.at/epsSO/epsSOBankListProtocol/201008}bic");
         $this->httpGetReturns($this->once(), 'https://routing.eps.or.at/appl/epsSO/data/haendler/v2_4', 'BankListInvalid.xml');
-        $this->Eps->GetBanks();
+        $this->Eps->GetBanksXml();
     }
 
     public function testInvalidResponseIsUncached()
@@ -59,7 +83,7 @@ class EpsComponentTest extends CakeTestCase
         $exceptionThrown = false;
         try
         {
-            $this->Eps->GetBanks();
+            $this->Eps->GetBanksXml();
         }
         catch (CakeException $e)
         {
@@ -72,7 +96,7 @@ class EpsComponentTest extends CakeTestCase
         $exceptionThrown = false;
         try
         {
-            $banks = $this->Eps->GetBanks();
+            $banks = $this->Eps->GetBanksXml();
         }
         catch (CakeException $e)
         {
@@ -90,7 +114,7 @@ class EpsComponentTest extends CakeTestCase
         $exceptionThrown = false;
         try
         {
-            $this->Eps->GetBanks();
+            $this->Eps->GetBanksXml();
         }
         catch (CakeException $e)
         {
@@ -98,7 +122,7 @@ class EpsComponentTest extends CakeTestCase
         }
         $this->assertEqual($exceptionThrown, true);
         
-        $banks = $this->Eps->GetBanks();
+        $banks = $this->Eps->GetBanksXml();
         $this->assertEqual($banks->bank[0]->bic, "TESTBANKXXX");
     }
 
