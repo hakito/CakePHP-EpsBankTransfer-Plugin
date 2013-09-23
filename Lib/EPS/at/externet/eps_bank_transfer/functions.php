@@ -2,6 +2,10 @@
 
 namespace at\externet\eps_bank_transfer;
 
+CONST XMLNS_eps = "http://www.stuzza.at/namespaces/eps/payment/2011/11";
+CONST XMLNS_epi = "http://www.stuzza.at/namespaces/eps/epi/2011/11";
+CONST XMLNS_epsp = "http://www.stuzza.at/namespaces/eps/protocol/2011/11";
+
 function FormatMonetaryXsdDecimal($val)
 {
     if (is_string($val))

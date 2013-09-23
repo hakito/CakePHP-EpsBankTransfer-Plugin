@@ -10,6 +10,9 @@ require_once EPS_BANK_TRANSFER_APP . 'Test' . DS . 'Helper.php';
 class EpsComponentTest extends CakeTestCase
 {
 
+    /** @var \EpsComponent eps component */
+    public $Eps = null;
+    
     /**
      * setUp method
      *
@@ -261,6 +264,38 @@ class EpsComponentTest extends CakeTestCase
         $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetails000.xml');
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
         $this->assertEqual($actual, null);        
+    }
+    
+    public function testGetBankConfirmationDetailsArrayThrowsExceptionWhenNoDataReceived()
+    {
+
+        $this->assertEqual($this->Eps->RawPostStream, 'php://input');
+        $this->expectException('BadRequestException', 'Could not read BankConfirmationDetails from input stream');
+        $this->Eps->GetBankConfirmationDetailsArray();
+    }
+    
+    public function testGetBankConfirmationDetailsArrayThrowsExceptionWhenOnInvalidXml()
+    {
+        $this->Eps->RawPostStream = eps_bank_transfer\GetEpsDataPath('BankConfirmationDetailsInvalid.xml');      
+        $this->expectException('BadRequestException', 'Invalid BankConfirmationDetails XML received');
+        $this->Eps->GetBankConfirmationDetailsArray();
+    }
+    
+    public function testGetBankConfirmationDetailsArraySuccess()
+    {
+        $this->assertEqual($this->Eps->RawPostStream, 'php://input');
+        $this->Eps->RawPostStream = eps_bank_transfer\GetEpsDataPath('BankConfirmationDetailsWithoutSignature.xml');      
+        
+        $actual = $this->Eps->GetBankConfirmationDetailsArray();
+        $expected = array(
+            'SessionId' => '13212452dea',
+            'PaymentConfirmationDetails' => array (
+                'RemittanceIdentifier' => 'AT1234567890XYZ',
+                'PayConApprovalTime' => '2007-03-19T11:11:00-05:00',
+                'PaymentReferenceIdentifier' => '120000302122320812201106461',
+                'StatusCode' => 'OK')
+        );
+        $this->assertEqual($actual, $expected);
     }
     
     // HELPER FUNCTIONS

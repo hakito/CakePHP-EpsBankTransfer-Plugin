@@ -6,6 +6,7 @@ App::uses('Folder', 'Utility');
 App::uses('File', 'Utility');
 
 use at\externet\eps_bank_transfer;
+require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . 'at' . DS . 'externet' . DS . 'eps_bank_transfer' . DS . 'functions.php';
 
 class EpsComponent extends Component
 {
@@ -23,6 +24,8 @@ class EpsComponent extends Component
 
     /** @var \Controller */
     private $Controller = null;
+    
+    public $RawPostStream = 'php://input';
     
     public function __construct($collection)
     {
@@ -107,6 +110,39 @@ class EpsComponent extends Component
         $xsd = self::GetXSD('epsSOBankListProtocol.xsd');
         return $this->GetCachedXMLElement($url, $xsd, $invalidateCache);
     }
+    
+    public function GetBankConfirmationDetailsArray()
+    {
+        $HTTP_RAW_POST_DATA = file_get_contents($this->RawPostStream);
+        if (empty($HTTP_RAW_POST_DATA))
+        {
+            throw new BadRequestException('Could not read BankConfirmationDetails from input stream');
+        }
+        
+        $simpleXml = null;
+        try
+        {
+            $simpleXml = EpsComponent::GetValidatedEpsProtocolSimpleXmlElement($HTTP_RAW_POST_DATA);
+        } catch (CakeException $e)
+        {
+            $ex = new BadRequestException('Invalid BankConfirmationDetails XML received');
+            $ex->innerException = $e;
+            throw $ex;
+        }
+        
+        $bankConfirmationDetails = $simpleXml->children(eps_bank_transfer\XMLNS_epsp)->BankConfirmationDetails;
+        $paymentConfirmationDetails = $bankConfirmationDetails->children(eps_bank_transfer\XMLNS_eps)->PaymentConfirmationDetails;
+        $remittanceIdentifier = $paymentConfirmationDetails->children(eps_bank_transfer\XMLNS_epi)->RemittanceIdentifier;
+        return array(
+            'SessionId' => '' . $bankConfirmationDetails->SessionId,
+            'PaymentConfirmationDetails' => array(
+                'RemittanceIdentifier' => '' . $remittanceIdentifier,
+                'PayConApprovalTime' => '' . $paymentConfirmationDetails->PayConApprovalTime,
+                'PaymentReferenceIdentifier' => '' . $paymentConfirmationDetails->PaymentReferenceIdentifier,
+                'StatusCode' => '' . $paymentConfirmationDetails->StatusCode
+            )
+        );
+    }
 
     /**
      * Redirect to Online Banking
@@ -151,7 +187,7 @@ class EpsComponent extends Component
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
         
         self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount );
-        $soAnswer = $this->SendPaymentOrder($transferInitiatorDetails, $bankUrl)->children("http://www.stuzza.at/namespaces/eps/protocol/2011/11");
+        $soAnswer = $this->SendPaymentOrder($transferInitiatorDetails, $bankUrl)->children(eps_bank_transfer\XMLNS_epsp);
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
  
         
@@ -186,10 +222,15 @@ class EpsComponent extends Component
         $xmlData = $data->asXML();
         $response = $this->PostUrlLogged($targetUrl, $xmlData, 'Send payment order');
 
-        $simpleXml = self::GetValidatedSimpleXmlElement($response->body, 'EPSProtocol-V24.xsd');
+        $simpleXml = self::GetValidatedEpsProtocolSimpleXmlElement($response->body);
         return $simpleXml;
     }
-
+    
+    public static function GetValidatedEpsProtocolSimpleXmlElement($xml)
+    {
+        return self::GetValidatedSimpleXmlElement($xml, 'EPSProtocol-V24.xsd');
+    }
+    
     public static function GetValidatedSimpleXmlElement($xml, $xsdFilename = null)
     {
         if ($xsdFilename != null)
