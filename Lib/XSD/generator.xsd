@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.stuzza.at/namespaces/eps/protocol/2011/11" elementFormDefault="qualified" attributeFormDefault="unqualified">
-	<xsd:import namespace="http://www.stuzza.at/namespaces/eps/protocol/2011/11" schemaLocation="EPSProtocol-V24.xsd"/>
-        <xsd:import namespace="http://www.eps.or.at/epsSO/epsSOBankListProtocol/201008" schemaLocation="epsSOBankListProtocol.xsd"/>
-</xsd:schema>
