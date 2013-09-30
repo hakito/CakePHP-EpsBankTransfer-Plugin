@@ -18,9 +18,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-App::uses('CakeSocket', 'Network');
-App::uses('Router', 'Routing');
-App::uses('Hash', 'Utility');
+namespace org\cakephp;
 
 /**
  * Cake network socket connection class.
@@ -30,7 +28,7 @@ App::uses('Hash', 'Utility');
  *
  * @package       Cake.Network.Http
  */
-class HttpSocket extends CakeSocket {
+class HttpSocket extends Socket {
 
 /**
  * When one activates the $quirksMode by setting it to true, all checks meant to
@@ -160,7 +158,7 @@ class HttpSocket extends CakeSocket {
 				$this->_configUri($config['request']['uri']);
 				unset($config['request']['uri']);
 			}
-			$this->config = Hash::merge($this->config, $config);
+			$this->config = array_merge($this->config, $config);
 		}
 		parent::__construct($this->config);
 	}
@@ -278,7 +276,7 @@ class HttpSocket extends CakeSocket {
 		}
 		$request['uri'] = $this->url($request['uri']);
 		$request['uri'] = $this->_parseUri($request['uri'], true);
-		$this->request = Hash::merge($this->request, array_diff_key($this->config['request'], array('cookies' => true)), $request);
+		$this->request = array_merge($this->request, array_diff_key($this->config['request'], array('cookies' => true)), $request);
 
 		$this->_configUri($this->request['uri']);
 
@@ -401,11 +399,7 @@ class HttpSocket extends CakeSocket {
 		}
 
 		list($plugin, $responseClass) = pluginSplit($this->responseClass, true);
-		App::uses($responseClass, $plugin . 'Network/Http');
-		if (!class_exists($responseClass)) {
-			throw new SocketException(__d('cake_dev', 'Class %s not found.', $this->responseClass));
-		}
-		$this->response = new $responseClass($response);
+		$this->response = new HttpSocketResponse($response);
 
 		if (!empty($this->response->cookies)) {
 			if (!isset($this->config['request']['cookies'][$Host])) {
@@ -457,7 +451,7 @@ class HttpSocket extends CakeSocket {
 			$uri = $this->_buildUri($uri);
 		}
 
-		$request = Hash::merge(array('method' => 'GET', 'uri' => $uri), $request);
+		$request = array_merge(array('method' => 'GET', 'uri' => $uri), $request);
 		return $this->request($request);
 	}
 
@@ -479,7 +473,7 @@ class HttpSocket extends CakeSocket {
  * @return mixed Result of request, either false on failure or the response to the request.
  */
 	public function post($uri = null, $data = array(), $request = array()) {
-		$request = Hash::merge(array('method' => 'POST', 'uri' => $uri, 'body' => $data), $request);
+		$request = array_merge(array('method' => 'POST', 'uri' => $uri, 'body' => $data), $request);
 		return $this->request($request);
 	}
 
@@ -492,7 +486,7 @@ class HttpSocket extends CakeSocket {
  * @return mixed Result of request
  */
 	public function put($uri = null, $data = array(), $request = array()) {
-		$request = Hash::merge(array('method' => 'PUT', 'uri' => $uri, 'body' => $data), $request);
+		$request = array_merge(array('method' => 'PUT', 'uri' => $uri, 'body' => $data), $request);
 		return $this->request($request);
 	}
 
@@ -505,7 +499,7 @@ class HttpSocket extends CakeSocket {
  * @return mixed Result of request
  */
 	public function patch($uri = null, $data = array(), $request = array()) {
-		$request = Hash::merge(array('method' => 'PATCH', 'uri' => $uri, 'body' => $data), $request);
+		$request = array_merge(array('method' => 'PATCH', 'uri' => $uri, 'body' => $data), $request);
 		return $this->request($request);
 	}
 
@@ -518,7 +512,7 @@ class HttpSocket extends CakeSocket {
  * @return mixed Result of request
  */
 	public function delete($uri = null, $data = array(), $request = array()) {
-		$request = Hash::merge(array('method' => 'DELETE', 'uri' => $uri, 'body' => $data), $request);
+		$request = array_merge(array('method' => 'DELETE', 'uri' => $uri, 'body' => $data), $request);
 		return $this->request($request);
 	}
 
@@ -625,17 +619,6 @@ class HttpSocket extends CakeSocket {
 		if (empty($this->_proxy['method']) || !isset($this->_proxy['user'], $this->_proxy['pass'])) {
 			return;
 		}
-		list($plugin, $authClass) = pluginSplit($this->_proxy['method'], true);
-		$authClass = Inflector::camelize($authClass) . 'Authentication';
-		App::uses($authClass, $plugin . 'Network/Http');
-
-		if (!class_exists($authClass)) {
-			throw new SocketException(__d('cake_dev', 'Unknown authentication method for proxy.'));
-		}
-		if (!method_exists($authClass, 'proxyAuthentication')) {
-			throw new SocketException(__d('cake_dev', 'The %s does not support proxy authentication.', $authClass));
-		}
-		call_user_func_array("$authClass::proxyAuthentication", array($this, &$this->_proxy));
 	}
 
 /**
@@ -663,8 +646,8 @@ class HttpSocket extends CakeSocket {
 				'uri' => array_intersect_key($uri, $this->config['request']['uri'])
 			)
 		);
-		$this->config = Hash::merge($this->config, $config);
-		$this->config = Hash::merge($this->config, array_intersect_key($this->config['request']['uri'], $this->config));
+		$this->config = array_merge($this->config, $config);
+		$this->config = array_merge($this->config, array_intersect_key($this->config['request']['uri'], $this->config));
 		return true;
 	}
 
@@ -687,7 +670,7 @@ class HttpSocket extends CakeSocket {
 			unset($this->config[$key]);
 		}
 		if (empty($this->_context['ssl']['cafile'])) {
-			$this->config['context']['ssl']['cafile'] = CAKE . 'Config' . DS . 'cacert.pem';
+			$this->config['context']['ssl']['cafile'] = __DIR__ . DIRECTORY_SEPARATOR . 'cacert.pem';
 		}
 		if (!empty($this->config['context']['ssl']['verify_host'])) {
 			$this->config['context']['ssl']['CN_match'] = $host;

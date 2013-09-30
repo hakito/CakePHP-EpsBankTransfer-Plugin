@@ -22,12 +22,4 @@ if (!defined('EPS_BANK_TRANSFER_APP')) {
 	define('EPS_BANK_TRANSFER_APP', dirname(__DIR__) . DS);
 }
 
-spl_autoload_register(function ($className) 
-{
-    $fileName = EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . str_replace("\\", DS, $className).".class.php";
- 
-	if (file_exists($fileName)) {
-		require_once $fileName;
-	}
-}
-);
+require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . 'src' . DS . 'autoloader.php';

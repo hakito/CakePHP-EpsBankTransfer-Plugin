@@ -18,7 +18,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-App::uses('Validation', 'Utility');
+namespace org\cakephp;
 
 /**
  * Cake network socket connection class.
@@ -27,7 +27,7 @@ App::uses('Validation', 'Utility');
  *
  * @package       Cake.Network
  */
-class CakeSocket {
+class Socket {
 
 /**
  * Object description
@@ -202,42 +202,6 @@ class CakeSocket {
 			return;
 		}
 		return stream_context_get_options($this->connection);
-	}
-
-/**
- * Get the host name of the current connection.
- *
- * @return string Host name
- */
-	public function host() {
-		if (Validation::ip($this->config['host'])) {
-			return gethostbyaddr($this->config['host']);
-		}
-		return gethostbyaddr($this->address());
-	}
-
-/**
- * Get the IP address of the current connection.
- *
- * @return string IP address
- */
-	public function address() {
-		if (Validation::ip($this->config['host'])) {
-			return $this->config['host'];
-		}
-		return gethostbyname($this->config['host']);
-	}
-
-/**
- * Get all IP addresses associated with the current connection.
- *
- * @return array IP addresses
- */
-	public function addresses() {
-		if (Validation::ip($this->config['host'])) {
-			return array($this->config['host']);
-		}
-		return gethostbynamel($this->config['host']);
 	}
 
 /**
