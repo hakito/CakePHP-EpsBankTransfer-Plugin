@@ -6,10 +6,12 @@ App::uses('Folder', 'Utility');
 App::uses('File', 'Utility');
 
 use at\externet\eps_bank_transfer;
+
 //require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . 'at' . DS . 'externet' . DS . 'eps_bank_transfer' . DS . 'functions.php';
 
 class EpsComponent extends Component
 {
+
     public $SoCommunicator;
 
     /** @var eps_bank_transfer\WebshopArticle[] articles */
@@ -24,15 +26,13 @@ class EpsComponent extends Component
     /** @var \Controller */
     private $Controller = null;
 
-
-    
     public function __construct($collection)
     {
         parent::__construct($collection);
         $this->SoCommunicator = new eps_bank_transfer\SoCommunicator;
         $this->SoCommunicator->LogCallback = array($this, 'WriteLog');
     }
-    
+
     public function startup(\Controller $controller)
     {
         parent::startup($controller);
@@ -74,8 +74,6 @@ class EpsComponent extends Component
         return $banks;
     }
 
-
-
     /**
      * Redirect to Online Banking
      * @param string $remittanceIdentifier Identifier for the given order. For example shopping Order.id
@@ -106,7 +104,7 @@ class EpsComponent extends Component
                         $this->Articles,
                         $transferMsgDetails);
         $bankUrl = null;
-        
+
         if (!empty($bankName))
         {
             $banks = $this->GetBanksArrayOrNull();
@@ -115,29 +113,83 @@ class EpsComponent extends Component
                 $bankUrl = $banks[$bankName]['epsUrl'];
             }
         }
-        
+
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
-        
-        self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount );
+
+        self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
         $plain = $this->SoCommunicator->SendTransferInitiatorDetails($transferInitiatorDetails, $bankUrl);
         $xml = new SimpleXMLElement($plain);
         $soAnswer = $sxml->children(eps_bank_transfer\XMLNS_epsp);
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
-        
+
         if (('' . $errorDetails->ErrorCode) != '000')
         {
             $errorCode = '' . $errorDetails->ErrorCode;
             $errorMsg = '' . $errorDetails->ErrorMsg;
-            self::WriteLog($logPrefix .' Error ' . $errorCode . ' ' . $errorMsg, false);
+            self::WriteLog($logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg, false);
             return array(
                 'ErrorCode' => $errorCode,
                 'ErrorMsg' => $errorMsg
-                );
+            );
         }
-        
+
         self::WriteLog($logPrefix, true);
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
     }
+    
+    /**
+     * Call this function when the confirmation URL is called by the Scheme Operator.
+     * @param callable $callback a callable to send BankConfirmationDetails to.
+     * This callable must return TRUE. The callable will be called with RemittanceIdentifer,
+     * StatusCode and raw xml result
+     * @param string $rawPostStream will read from this stream or file with file_get_contents
+     * @throws InvalidCallbackException when callback is not callable
+     * @throws CallbackResponseException when callback does not return TRUE
+     * @throws XmlValidationException when $rawInputStream does not validate against XSD
+     * @throws cakephp\SocketException when communication with SO fails
+     */
+    public function HandleConfirmationUrl($callback, $rawPostStream = 'php://input')
+    {
+        if (!is_callable($callback))
+        {
+            $message = 'Invalid Callback given';
+            self::WriteLog($message);
+            throw new eps_bank_transfer\InvalidCallbackException($message);
+        }
+
+        $callbackWrapper = function($data) use (&$callback)
+                {
+                    $simpleXml = new \SimpleXMLElement($data);
+                    $bankConfirmationDetails = $simpleXml->children(eps_bank_transfer\XMLNS_epsp)->BankConfirmationDetails;
+                    $paymentConfirmationDetails = $bankConfirmationDetails->children(eps_bank_transfer\XMLNS_eps)->PaymentConfirmationDetails;
+                    $remittanceIdentifier = $paymentConfirmationDetails->children(eps_bank_transfer\XMLNS_epi)->RemittanceIdentifier;
+
+                    return call_user_func($callback, $remittanceIdentifier, $paymentConfirmationDetails->StatusCode, $data);
+                };
+        $this->SoCommunicator->HandleConfirmationUrl($callbackWrapper, $rawPostStream);
+    }
+
+    /*
+     *
+      public function GetBankConfirmationDetailsArray()
+      {
+      $simpleXml = new \SimpleXMLElement($this->GetBankConfirmationDetails());
+      $bankConfirmationDetails = $simpleXml->children(XMLNS_epsp)->BankConfirmationDetails;
+      $paymentConfirmationDetails = $bankConfirmationDetails->children(XMLNS_eps)->PaymentConfirmationDetails;
+      $remittanceIdentifier = $paymentConfirmationDetails->children(XMLNS_epi)->RemittanceIdentifier;
+      return array(
+      'SessionId' => '' . $bankConfirmationDetails->SessionId,
+      'PaymentConfirmationDetails' => array(
+      'RemittanceIdentifier' => '' . $remittanceIdentifier,
+      'PayConApprovalTime' => '' . $paymentConfirmationDetails->PayConApprovalTime,
+      'PaymentReferenceIdentifier' => '' . $paymentConfirmationDetails->PaymentReferenceIdentifier,
+      'StatusCode' => '' . $paymentConfirmationDetails->StatusCode
+      )
+      );
+      }
+     */
+
+    // PRIVATE FUNCTIONS
 
     private static function WriteLog($message, $success = null)
     {
@@ -145,4 +197,5 @@ class EpsComponent extends Component
             $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
         CakeLog::write('eps', $message);
     }
+
 }
