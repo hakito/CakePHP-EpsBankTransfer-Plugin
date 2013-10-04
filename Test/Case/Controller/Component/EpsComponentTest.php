@@ -14,6 +14,8 @@ class EpsComponentTest extends CakeTestCase
     /** @var \EpsComponent eps component */
     public $Eps = null;
 
+    public $Controller = null;
+    
     /**
      * setUp method
      *
@@ -24,7 +26,10 @@ class EpsComponentTest extends CakeTestCase
         parent::setUp();
 
         $Collection = new ComponentCollection();
+        $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
+        $this->Controller = $mockedController;
         $this->Eps = new EpsComponent($Collection);
+        $this->Eps->startup($mockedController);
         $this->Eps->SoCommunicator = $this->getMock('at\externet\eps_bank_transfer\SoCommunicator');
         Cache::clear();
     }
@@ -103,92 +108,50 @@ class EpsComponentTest extends CakeTestCase
     public function testHandleConfirmationUrlCallsSoCommunicator()
     {
         $this->Eps->SoCommunicator->expects($this->once())
-                ->method('HandleConfirmationUrl');
-
-        $this->Eps->HandleConfirmationUrl(function()
-                {
-
-                });
+                ->method('HandleConfirmationurl')
+                ->with($this->equalTo(array($this->Controller, 'afterEpsBankTransferNotification')), null, 'foo', 'bar');
+        $this->Eps->HandleConfirmationUrl('foo', 'bar');
     }
 
-    public function testHandleConfirmationUrlWrapsCallaback()
+    public function testHandleConfirmationUrlCallsSoCommunicatorWithVitalityCheckCallback()
     {
+        $config = Configure::read('EpsBankTransfer');
+        $config['VitalityCheckCallback'] = 'MyVitalityCheckCallback';
+        Configure::write('EpsBankTransfer', $config);
+        $this->Eps->VitalityCheckCallback = 'MyVitalityCheckCallback';
         $this->Eps->SoCommunicator->expects($this->once())
-                ->method('HandleConfirmationUrl')
-                ->with($this->isType('callable'), 'php://input');
-        $this->Eps->HandleConfirmationUrl(function()
-                {
-
-                });
+                ->method('HandleConfirmationurl')
+                ->with($this->anything(), $this->equalTo(array($this->Controller, 'MyVitalityCheckCallback')), 'foo', 'bar');
+        $this->Eps->HandleConfirmationUrl('foo', 'bar');
     }
-
-    public function testHandleConfirmationExceptionWhenNoCallable()
+    
+    public function testPaymentRedirectErrorResponse()
     {
-        $this->expectException('\at\externet\eps_bank_transfer\InvalidCallbackException');
-        $this->Eps->HandleConfirmationUrl('something');
-    }
-
-    public function testHandleConfirmationUrlExceptionOnError()
-    {
-        $filename = 'BankConfirmationDetailsWithoutSignature.xml';
-        $dataPath = eps_bank_transfer\BaseTest::GetEpsDataPath($filename);
-        $this->Eps->SoCommunicator = new eps_bank_transfer\SoCommunicator();
-
-        $actual = array();
-        $this->Eps->HandleConfirmationUrl(function($remittanceIdentifier, $statusCode, $rawResult) use (&$actual)
-                {
-                    $actual['id'] = $remittanceIdentifier;
-                    $actual['code'] = $statusCode;
-                    $actual['raw'] = $rawResult;
-                    return true;
-                }, $dataPath);
-
-        $expected = array(
-            'id' => 'AT1234567890XYZ',
-            'code' => 'OK',
-            'raw' => eps_bank_transfer\BaseTest::GetEpsData($filename)
-        );
-
+        $this->Eps->AddArticle('Foo', 3, "7");
+        $this->Eps->SoCommunicator->expects($this->once())
+                ->method('SendTransferInitiatorDetails')
+                ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml')));
+        $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+        $expected = array('ErrorCode' => '004', 'ErrorMsg' => 'merchant not found!');
         $this->assertEqual($actual, $expected);
     }
 
-    /*
-     *
+    public function testPaymentRedirectSuccess()
+    {
+        $controller = $this->getMock('Controller', array('redirect'));
 
-      public function testPaymentRedirectInvalidXml()
-      {
-      $this->Eps->AddArticle('Foo', 3, "7");
-      $this->expectException('CakeException', "XML does not validate against XSD. Element '{http://www.stuzza.at/namespaces/eps/protocol/2011/11}ErrorCode': '12345' is not a valid value of the local atomic type.");
-      $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetailsInvalid.xml');
-      $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
-      }
+        $this->Eps->SoCommunicator->expects($this->once())
+                ->method('SendTransferInitiatorDetails')
+                ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails000.xml')));
 
-      public function testPaymentRedirectErrorResponse()
-      {
-      $this->Eps->AddArticle('Foo', 3, "7");
-      $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetails004.xml');
-      $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
-      $expected = array('ErrorCode' => '004', 'ErrorMsg' => 'merchant not found!');
-      $this->assertEqual($actual, $expected);
-      }
+        $controller->expects($this->once())
+                ->method('redirect')
+                ->with('http://epsbank.at/asdk3935jdlf043');
 
-      public function testPaymentRedirectSuccess()
-      {
-      $controller = $this->getMock('Controller', array('redirect'));
-      $this->Eps->startUp($controller);
-      $this->Eps->AddArticle('Foo', 3, "7");
-      $this->httpPostReturns($this->at(0), 'https://routing.eps.or.at/appl/epsSO/transinit/eps/v2_4', $this->stringContains('xml'), 'BankResponseDetails000.xml');
-      $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
-      $this->assertEqual($actual, null);
-      }
+        $this->Eps->startUp($controller);
+        $this->Eps->AddArticle('Foo', 3, "7");
 
-      public function testGetBankConfirmationDetailsArrayThrowsExceptionWhenNoDataReceived()
-      {
-
-      $this->assertEqual($this->Eps->RawPostStream, 'php://input');
-      $this->expectException('BadRequestException', 'Could not read BankConfirmationDetails from input stream');
-      $this->Eps->GetBankConfirmationDetailsArray();
-      }
-
-     */
+        $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+        $this->assertEqual($actual, null);
+    }
 }

@@ -7,8 +7,6 @@ App::uses('File', 'Utility');
 
 use at\externet\eps_bank_transfer;
 
-//require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . 'at' . DS . 'externet' . DS . 'eps_bank_transfer' . DS . 'functions.php';
-
 class EpsComponent extends Component
 {
 
@@ -29,8 +27,17 @@ class EpsComponent extends Component
     public function __construct($collection)
     {
         parent::__construct($collection);
+        $defaults = array(
+            'SecuritySuffixLength' => 8,                                        
+            'SecuritySeed'  => Configure::read('Security.salt'),                        
+            );             
+        
+        $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
+        
         $this->SoCommunicator = new eps_bank_transfer\SoCommunicator;
         $this->SoCommunicator->LogCallback = array($this, 'WriteLog');
+        $this->SoCommunicator->SecuritySuffixLength = $config['SecuritySuffixLength'];
+        $this->SoCommunicator->SecuritySeed = $config['SecuritySeed'];
     }
 
     public function startup(\Controller $controller)
@@ -40,16 +47,18 @@ class EpsComponent extends Component
     }
 
     /**
-     * Add an article
+     * Add an Webshop Article. The article will be appended to the array or
+     * at the given array position.
      * @param string $name
      * @param int $count
      * @param int $price in cents
+     * @param string $arrayPosition optional identifier for internal storage
      */
-    public function AddArticle($name, $count, $price, $identifier = null)
+    public function AddArticle($name, $count, $price, $arrayPosition = null)
     {
         $article = new eps_bank_transfer\WebshopArticle($name, $count, $price);
-        if ($identifier != null)
-            $this->Articles[$identifier] = $article;
+        if ($arrayPosition != null)
+            $this->Articles[$arrayPosition] = $article;
         else
             $this->Articles[] = $article;
 
@@ -57,9 +66,9 @@ class EpsComponent extends Component
     }
 
     /**
-     * Get banks as associative array
-     * @param type $invalidateCache
-     * @return array
+     * Get banks as associative array. The bank array will be cached.
+     * @param type $invalidateCache set to TRUE to force reading not from cache
+     * @return array associative array with bank name as key
      */
     public function GetBanksArray($invalidateCache = false)
     {
@@ -76,12 +85,16 @@ class EpsComponent extends Component
 
     /**
      * Redirect to Online Banking
-     * @param string $remittanceIdentifier Identifier for the given order. For example shopping Order.id
+     * @param string $remittanceIdentifier Identifier for the given order. For example Order.id
      * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
      * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
      * @param string $bankName optional bank name if the bank was already choosen on the site. If not given
      * the user will be prompted later to select his bank
-     * @return array Error info array (ErrorCode, ErrorMsg) if the redirect failed
+     * @throws XmlValidationException when the returned BankResponseDetails does not validate against XSD
+     * @throws cakephp\SocketException when communication with SO fails
+     * @throws \UnexpectedValueException when using security suffix without security seed
+     * @return string BankResponseDetails
+     * @return array Error info array (ErrorCode, ErrorMsg) from the BankResponseDetails
      */
     public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankName = null)
     {
@@ -119,7 +132,7 @@ class EpsComponent extends Component
         self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
         $plain = $this->SoCommunicator->SendTransferInitiatorDetails($transferInitiatorDetails, $bankUrl);
         $xml = new SimpleXMLElement($plain);
-        $soAnswer = $sxml->children(eps_bank_transfer\XMLNS_epsp);
+        $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
 
         if (('' . $errorDetails->ErrorCode) != '000')
@@ -139,55 +152,28 @@ class EpsComponent extends Component
     
     /**
      * Call this function when the confirmation URL is called by the Scheme Operator.
-     * @param callable $callback a callable to send BankConfirmationDetails to.
-     * This callable must return TRUE. The callable will be called with RemittanceIdentifer,
-     * StatusCode and raw xml result
      * @param string $rawPostStream will read from this stream or file with file_get_contents
+     * @param string $outputStream will write to this stream the expected responses for the
      * @throws InvalidCallbackException when callback is not callable
      * @throws CallbackResponseException when callback does not return TRUE
      * @throws XmlValidationException when $rawInputStream does not validate against XSD
      * @throws cakephp\SocketException when communication with SO fails
+     * @throws \UnexpectedValueException when using security suffix without security seed
+     * @throws UnknownRemittanceIdentifierException when security suffix does not match
      */
-    public function HandleConfirmationUrl($callback, $rawPostStream = 'php://input')
+    public function HandleConfirmationUrl($rawPostStream = 'php://input', $outputStream = 'php://output')
     {
-        if (!is_callable($callback))
-        {
-            $message = 'Invalid Callback given';
-            self::WriteLog($message);
-            throw new eps_bank_transfer\InvalidCallbackException($message);
-        }
-
-        $callbackWrapper = function($data) use (&$callback)
-                {
-                    $simpleXml = new \SimpleXMLElement($data);
-                    $bankConfirmationDetails = $simpleXml->children(eps_bank_transfer\XMLNS_epsp)->BankConfirmationDetails;
-                    $paymentConfirmationDetails = $bankConfirmationDetails->children(eps_bank_transfer\XMLNS_eps)->PaymentConfirmationDetails;
-                    $remittanceIdentifier = $paymentConfirmationDetails->children(eps_bank_transfer\XMLNS_epi)->RemittanceIdentifier;
-
-                    return call_user_func($callback, $remittanceIdentifier, $paymentConfirmationDetails->StatusCode, $data);
-                };
-        $this->SoCommunicator->HandleConfirmationUrl($callbackWrapper, $rawPostStream);
+        $defaults = array(
+            'ConfirmationCallback' => 'afterEpsBankTransferNotification', 
+            'VitalityCheckCallback' => null,
+            );
+        $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
+        $this->SoCommunicator->HandleConfirmationUrl(
+                array($this->Controller, $config['ConfirmationCallback']),
+                empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']), //$config['VitalityCheckCallback'],
+                $rawPostStream,
+                $outputStream);
     }
-
-    /*
-     *
-      public function GetBankConfirmationDetailsArray()
-      {
-      $simpleXml = new \SimpleXMLElement($this->GetBankConfirmationDetails());
-      $bankConfirmationDetails = $simpleXml->children(XMLNS_epsp)->BankConfirmationDetails;
-      $paymentConfirmationDetails = $bankConfirmationDetails->children(XMLNS_eps)->PaymentConfirmationDetails;
-      $remittanceIdentifier = $paymentConfirmationDetails->children(XMLNS_epi)->RemittanceIdentifier;
-      return array(
-      'SessionId' => '' . $bankConfirmationDetails->SessionId,
-      'PaymentConfirmationDetails' => array(
-      'RemittanceIdentifier' => '' . $remittanceIdentifier,
-      'PayConApprovalTime' => '' . $paymentConfirmationDetails->PayConApprovalTime,
-      'PaymentReferenceIdentifier' => '' . $paymentConfirmationDetails->PaymentReferenceIdentifier,
-      'StatusCode' => '' . $paymentConfirmationDetails->StatusCode
-      )
-      );
-      }
-     */
 
     // PRIVATE FUNCTIONS
 
