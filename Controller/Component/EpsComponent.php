@@ -12,10 +12,15 @@ class EpsComponent extends Component
 
     public $SoCommunicator;
 
-    /** @var eps_bank_transfer\WebshopArticle[] articles */
+    /** 
+     * Webshop articles
+     * @var eps_bank_transfer\WebshopArticle[]  */
     public $Articles = array();
 
-    /** @var int total of amount to pay in cents */
+    /**
+     * Total of amount to pay in cents 
+     * @var int 
+     */
     public $Total = 0;
 
     /** @var string prefix for caching keys in this component */
