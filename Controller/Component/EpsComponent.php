@@ -125,7 +125,7 @@ class EpsComponent extends Component
 
         if (!empty($bankName))
         {
-            $banks = $this->GetBanksArrayOrNull();
+            $banks = $this->GetBanksArray();
             if ($banks != null)
             {
                 $bankUrl = $banks[$bankName]['epsUrl'];
