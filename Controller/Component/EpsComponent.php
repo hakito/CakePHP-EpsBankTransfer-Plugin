@@ -182,7 +182,7 @@ class EpsComponent extends Component
 
     // PRIVATE FUNCTIONS
 
-    private static function WriteLog($message, $success = null)
+    public static function WriteLog($message, $success = null)
     {
         if ($success != null)
             $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
