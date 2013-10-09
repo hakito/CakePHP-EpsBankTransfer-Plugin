@@ -1,7 +1,7 @@
 <?php
 /**
  * BEGIN EpsBankTransfer Configuration
- * Use these settings to set defaults for the EpsHelper class.
+ * Use these settings to set defaults for the EPS component.
  *
  * put this code into your bootstrap.php, so you can override settings.
  */
