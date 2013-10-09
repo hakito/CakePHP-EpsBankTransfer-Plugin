@@ -1,5 +1,5 @@
 <?php
-
+require_once EPS_BANK_TRANSFER_APP . 'Test' . DS . 'Helper.php';
 class LibTest extends CakeTestCase
 {
     public static function suite() {
