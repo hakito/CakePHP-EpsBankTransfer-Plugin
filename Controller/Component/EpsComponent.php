@@ -93,7 +93,7 @@ class EpsComponent extends Component
      * @param string $remittanceIdentifier Identifier for the given order. For example Order.id
      * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
      * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
-     * @param string $bankName optional bank name if the bank was already choosen on the site. If not given
+     * @param string $bankUrl optional bank url if the bank was already choosen on the site. If not given
      * the user will be prompted later to select his bank
      * @throws XmlValidationException when the returned BankResponseDetails does not validate against XSD
      * @throws cakephp\SocketException when communication with SO fails
@@ -101,7 +101,7 @@ class EpsComponent extends Component
      * @return string BankResponseDetails
      * @return array Error info array (ErrorCode, ErrorMsg) from the BankResponseDetails
      */
-    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankName = null)
+    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankUrl = null)
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
@@ -121,17 +121,7 @@ class EpsComponent extends Component
                         $this->Total,
                         $this->Articles,
                         $transferMsgDetails);
-        $bankUrl = null;
-
-        if (!empty($bankName))
-        {
-            $banks = $this->GetBanksArray();
-            if ($banks != null)
-            {
-                $bankUrl = $banks[$bankName]['epsUrl'];
-            }
-        }
-
+        
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
 
         self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
