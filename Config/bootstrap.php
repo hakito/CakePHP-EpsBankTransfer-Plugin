@@ -29,4 +29,5 @@ if (!defined('EPS_BANK_TRANSFER_APP')) {
 	define('EPS_BANK_TRANSFER_APP', dirname(__DIR__) . DS);
 }
 
+require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EpsCommon.php';
 require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . 'src' . DS . 'autoloader.php';

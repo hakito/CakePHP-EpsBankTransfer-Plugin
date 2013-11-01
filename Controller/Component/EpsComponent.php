@@ -9,9 +9,6 @@ use at\externet\eps_bank_transfer;
 
 class EpsComponent extends Component
 {
-
-    public $SoCommunicator;
-
     /** 
      * Webshop articles
      * @var eps_bank_transfer\WebshopArticle[]  */
@@ -22,9 +19,6 @@ class EpsComponent extends Component
      * @var int 
      */
     public $Total = 0;
-
-    /** @var string prefix for caching keys in this component */
-    public $CacheKeyPrefix = 'EpsBankTransferComponent';
 
     /** @var \Controller */
     private $Controller = null;
@@ -39,10 +33,10 @@ class EpsComponent extends Component
         
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
         
-        $this->SoCommunicator = new eps_bank_transfer\SoCommunicator;
-        $this->SoCommunicator->LogCallback = array($this, 'WriteLog');
-        $this->SoCommunicator->SecuritySuffixLength = $config['SecuritySuffixLength'];
-        $this->SoCommunicator->SecuritySeed = $config['SecuritySeed'];
+        $SoCommunicator = EpsCommon::GetSoCommunicator();
+        $SoCommunicator->LogCallback = array($this, 'WriteLog');
+        $SoCommunicator->SecuritySuffixLength = $config['SecuritySuffixLength'];
+        $SoCommunicator->SecuritySeed = $config['SecuritySeed'];
     }
 
     public function startup(\Controller $controller)
@@ -72,20 +66,13 @@ class EpsComponent extends Component
 
     /**
      * Get banks as associative array. The bank array will be cached.
-     * @param type $invalidateCache set to TRUE to force reading not from cache
+     * @param bool $invalidateCache set to TRUE to force reading not from cache
+     * @param string $config cache config used for caching
      * @return array associative array with bank name as key
      */
-    public function GetBanksArray($invalidateCache = false)
+    public function GetBanksArray($invalidateCache = false, $config = 'default')
     {
-        $key = $this->CacheKeyPrefix . 'BanksArray';
-        $banks = Cache::read($key);
-        if (!$banks || $invalidateCache)
-        {
-            $banks = $this->SoCommunicator->TryGetBanksArray();
-            if (!empty($banks))
-                Cache::write($key, $banks);
-        }
-        return $banks;
+        return EpsCommon::GetBanksArray($invalidateCache, $config);
     }
 
     /**
@@ -125,7 +112,7 @@ class EpsComponent extends Component
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
 
         self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
-        $plain = $this->SoCommunicator->SendTransferInitiatorDetails($transferInitiatorDetails, $bankUrl);
+        $plain = EpsCommon::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails, $bankUrl);
         $xml = new SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
@@ -163,7 +150,7 @@ class EpsComponent extends Component
             'VitalityCheckCallback' => null,
             );
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
-        $this->SoCommunicator->HandleConfirmationUrl(
+        EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
                 array($this->Controller, $config['ConfirmationCallback']),
                 empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']), //$config['VitalityCheckCallback'],
                 $rawPostStream,
@@ -172,7 +159,7 @@ class EpsComponent extends Component
 
     // PRIVATE FUNCTIONS
 
-    public static function WriteLog($message, $success = null)
+    private static function WriteLog($message, $success = null)
     {
         if ($success != null)
             $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
