@@ -80,7 +80,7 @@ class EpsComponent extends Component
      * @param string $remittanceIdentifier Identifier for the given order. For example Order.id
      * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
      * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
-     * @param string $bankUrl optional bank url if the bank was already choosen on the site. If not given
+     * @param string $bic optional bank BIC if the bank was already choosen on the site. If not given
      * the user will be prompted later to select his bank
      * @throws XmlValidationException when the returned BankResponseDetails does not validate against XSD
      * @throws cakephp\SocketException when communication with SO fails
@@ -88,7 +88,7 @@ class EpsComponent extends Component
      * @return string BankResponseDetails
      * @return array Error info array (ErrorCode, ErrorMsg) from the BankResponseDetails
      */
-    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankUrl = null)
+    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bic = null)
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
@@ -109,10 +109,12 @@ class EpsComponent extends Component
                         $this->Articles,
                         $transferMsgDetails);
         
+        $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
+        
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
 
         self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
-        $plain = EpsCommon::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails, $bankUrl);
+        $plain = EpsCommon::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails);
         $xml = new SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
