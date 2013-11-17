@@ -109,8 +109,8 @@ class EpsComponentTest extends CakeTestCase
     {
         EpsCommon::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationurl')
-                ->with($this->equalTo(array($this->Controller, 'afterEpsBankTransferNotification')), null, 'foo', 'bar');
-        $this->Eps->HandleConfirmationUrl('foo', 'bar');
+                ->with($this->isType('callable'), null, 'foo', 'bar');
+        $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
     }
 
     public function testHandleConfirmationUrlCallsSoCommunicatorWithVitalityCheckCallback()
@@ -122,7 +122,7 @@ class EpsComponentTest extends CakeTestCase
         EpsCommon::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationurl')
                 ->with($this->anything(), $this->equalTo(array($this->Controller, 'MyVitalityCheckCallback')), 'foo', 'bar');
-        $this->Eps->HandleConfirmationUrl('foo', 'bar');
+        $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
     }
     
     public function testPaymentRedirectErrorResponse()

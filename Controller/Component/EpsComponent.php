@@ -23,6 +23,9 @@ class EpsComponent extends Component
     /** @var \Controller */
     private $Controller = null;
 
+    /** @var string */
+    private $ObscuritySeed;
+
     public function __construct($collection)
     {
         parent::__construct($collection);
@@ -32,10 +35,10 @@ class EpsComponent extends Component
             );             
         
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
-        
+
         $SoCommunicator = EpsCommon::GetSoCommunicator();
         $SoCommunicator->ObscuritySuffixLength = $config['ObscuritySuffixLength'];
-        $SoCommunicator->ObscuritySeed = $config['ObscuritySeed'];
+        $SoCommunicator->ObscuritySeed = $this->ObscuritySeed = $config['ObscuritySeed'];
     }
 
     public function startup(\Controller $controller)
@@ -91,6 +94,7 @@ class EpsComponent extends Component
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
+        $eRemittanceIdentifier= Security::rijndael($remittanceIdentifier, $this->ObscuritySeed, 'encrypt');
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
                         Router::url('/eps_bank_transfer/process', true),
                         $TransactionOkUrl,
@@ -144,7 +148,7 @@ class EpsComponent extends Component
      * @throws \UnexpectedValueException when using security suffix without security seed
      * @throws UnknownRemittanceIdentifierException when security suffix does not match
      */
-    public function HandleConfirmationUrl($rawPostStream = 'php://input', $outputStream = 'php://output')
+    public function HandleConfirmationUrl($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
     {
         EpsCommon::WriteLog('Handle confirmation url');
         $defaults = array(
@@ -152,8 +156,20 @@ class EpsComponent extends Component
             'VitalityCheckCallback' => null,
             );
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
+
+        $remittanceIdentifier = Security::rijndael($eRemittanceIdentifier, $this->ObscuritySeed, 'decrypt');
+        $controller = &$this->Controller;
+
+        $confirmationCallbackWrapper = function($raw, $xmlRemittanceIdentifier, $statusCode) use ($config, $remittanceIdentifier, &$controller)
+                {
+                    if ($remittanceIdentifier != $xmlRemittanceIdentifier)
+                        throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch');
+
+                    call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $xmlRemittanceIdentifier, $statusCode));
+                };
+
         EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
-                array($this->Controller, $config['ConfirmationCallback']),
+                $confirmationCallbackWrapper,
                 empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
                 $rawPostStream,
                 $outputStream);

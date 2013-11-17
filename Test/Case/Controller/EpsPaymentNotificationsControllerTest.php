@@ -23,6 +23,6 @@ class EpsPaymentNotificationsControllerTest extends ControllerTestCase
         $target = $this->Controller->Eps;
         $target->expects($this->once())
                 ->method('HandleConfirmationUrl');
-        $this->testAction('/eps_bank_transfer/process');
+        $this->testAction('/eps_bank_transfer/process/foo');
     }     
 }
