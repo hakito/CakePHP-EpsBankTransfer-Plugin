@@ -24,8 +24,18 @@ class EpsCommon
     public static function GetSoCommunicator()
     {
         if (self::$SoCommunicator == null)
+        {
             self::$SoCommunicator = new at\externet\eps_bank_transfer\SoCommunicator();
+            self::$SoCommunicator->LogCallback = array('EpsCommon', 'WriteLog');
+        }
         return self::$SoCommunicator;
+    }
+
+    public static function WriteLog($message, $success = null)
+    {
+        if ($success != null)
+            $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
+        CakeLog::write('eps', $message);
     }
 
 }

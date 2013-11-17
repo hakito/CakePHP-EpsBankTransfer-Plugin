@@ -34,7 +34,6 @@ class EpsComponent extends Component
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
         
         $SoCommunicator = EpsCommon::GetSoCommunicator();
-        $SoCommunicator->LogCallback = array($this, 'WriteLog');
         $SoCommunicator->SecuritySuffixLength = $config['SecuritySuffixLength'];
         $SoCommunicator->SecuritySeed = $config['SecuritySeed'];
     }
@@ -113,7 +112,7 @@ class EpsComponent extends Component
         
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
 
-        self::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
+        EpsCommon::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
         $plain = EpsCommon::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails);
         $xml = new SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
@@ -123,14 +122,14 @@ class EpsComponent extends Component
         {
             $errorCode = '' . $errorDetails->ErrorCode;
             $errorMsg = '' . $errorDetails->ErrorMsg;
-            self::WriteLog($logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg, false);
+            EpsCommon::WriteLog($logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg, false);
             return array(
                 'ErrorCode' => $errorCode,
                 'ErrorMsg' => $errorMsg
             );
         }
 
-        self::WriteLog($logPrefix, true);
+        EpsCommon::WriteLog($logPrefix, true);
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
     }
     
@@ -147,6 +146,7 @@ class EpsComponent extends Component
      */
     public function HandleConfirmationUrl($rawPostStream = 'php://input', $outputStream = 'php://output')
     {
+        EpsCommon::WriteLog('Handle confirmation url');
         $defaults = array(
             'ConfirmationCallback' => 'afterEpsBankTransferNotification', 
             'VitalityCheckCallback' => null,
@@ -154,18 +154,10 @@ class EpsComponent extends Component
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
         EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
                 array($this->Controller, $config['ConfirmationCallback']),
-                empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']), //$config['VitalityCheckCallback'],
+                empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
                 $rawPostStream,
                 $outputStream);
     }
 
-    // PRIVATE FUNCTIONS
-
-    private static function WriteLog($message, $success = null)
-    {
-        if ($success != null)
-            $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
-        CakeLog::write('eps', $message);
-    }
 
 }
