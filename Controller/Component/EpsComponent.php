@@ -150,7 +150,7 @@ class EpsComponent extends Component
      */
     public function HandleConfirmationUrl($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
     {
-        EpsCommon::WriteLog('Handle confirmation url');
+        EpsCommon::WriteLog('BEGIN: Handle confirmation url');
         $defaults = array(
             'ConfirmationCallback' => 'afterEpsBankTransferNotification', 
             'VitalityCheckCallback' => null,
@@ -173,6 +173,8 @@ class EpsComponent extends Component
                 empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
                 $rawPostStream,
                 $outputStream);
+        
+        EpsCommon::WriteLog('END: Handle confirmation url');
     }
 
 
