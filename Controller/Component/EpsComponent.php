@@ -27,15 +27,15 @@ class EpsComponent extends Component
     {
         parent::__construct($collection);
         $defaults = array(
-            'SecuritySuffixLength' => 8,                                        
-            'SecuritySeed'  => Configure::read('Security.salt'),                        
+            'ObscuritySuffixLength' => 8,
+            'ObscuritySeed'  => Configure::read('Security.salt'),
             );             
         
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
         
         $SoCommunicator = EpsCommon::GetSoCommunicator();
-        $SoCommunicator->SecuritySuffixLength = $config['SecuritySuffixLength'];
-        $SoCommunicator->SecuritySeed = $config['SecuritySeed'];
+        $SoCommunicator->ObscuritySuffixLength = $config['ObscuritySuffixLength'];
+        $SoCommunicator->ObscuritySeed = $config['ObscuritySeed'];
     }
 
     public function startup(\Controller $controller)

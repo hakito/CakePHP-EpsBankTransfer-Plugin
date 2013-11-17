@@ -15,8 +15,8 @@ if (is_null(Configure::read('EpsBankTransfer'))) {
 		'account_owner' => 'John Q. Public',                    // Name of the account owner where money will be sent to
             
                 //// optional parameters
-                //'SecuritySuffixLength' => 8,                            // Number of hash chars appended to remittance identifier
-                //'SecuritySeed'  => Configure::read('Security.salt'),    // Hash seed or suffix of remittance identifier
+                //'ObscuritySuffixLength' => 8,                            // Number of hash chars appended to remittance identifier
+                //'ObscuritySeed'  => Configure::read('Security.salt'),    // Hash seed or suffix of remittance identifier
                 //'ConfirmationCallback' => 'afterEpsBankTransferNotification', // Name of callback function to be called in app controller when confirmation url is called with bankconfirmation details
                 //'VitalityCheckCallback' => null                         // Name of callback function to be called when confirmation url is called with vitalitycheck details
        ));
