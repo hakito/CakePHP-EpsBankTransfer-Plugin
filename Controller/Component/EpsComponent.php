@@ -165,7 +165,7 @@ class EpsComponent extends Component
                     if ($remittanceIdentifier != $xmlRemittanceIdentifier)
                         throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch');
 
-                    call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $xmlRemittanceIdentifier, $statusCode));
+                    return call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $xmlRemittanceIdentifier, $statusCode));
                 };
 
         EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
