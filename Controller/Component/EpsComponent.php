@@ -96,7 +96,7 @@ class EpsComponent extends Component
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
         $eRemittanceIdentifier= Security::rijndael($remittanceIdentifier, $this->ObscuritySeed, 'encrypt');
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
-                        Router::url('/eps_bank_transfer/process', true),
+                        Router::url('/eps_bank_transfer/process/'.$eRemittanceIdentifier, true),
                         $TransactionOkUrl,
                         $TransactionNokUrl
         );
@@ -163,7 +163,7 @@ class EpsComponent extends Component
         $confirmationCallbackWrapper = function($raw, $xmlRemittanceIdentifier, $statusCode) use ($config, $remittanceIdentifier, &$controller)
                 {
                     if ($remittanceIdentifier != $xmlRemittanceIdentifier)
-                        throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch');
+                        throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' . $remittanceIdentifier . ' ' . $xmlRemittanceIdentifier);
 
                     return call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $xmlRemittanceIdentifier, $statusCode));
                 };
