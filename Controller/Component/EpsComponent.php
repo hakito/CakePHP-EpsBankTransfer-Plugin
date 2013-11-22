@@ -94,7 +94,7 @@ class EpsComponent extends Component
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
-        $eRemittanceIdentifier= urlencode(base64_encode(Security::rijndael($remittanceIdentifier, $this->ObscuritySeed, 'encrypt')));
+        $eRemittanceIdentifier= rawurlencode(base64_encode(Security::rijndael($remittanceIdentifier, $this->ObscuritySeed, 'encrypt')));
         $confirmationUrl = Router::url('/eps_bank_transfer/process/'.$eRemittanceIdentifier, true);
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
                         $confirmationUrl,
