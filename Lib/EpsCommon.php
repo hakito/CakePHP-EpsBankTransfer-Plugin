@@ -8,6 +8,16 @@ class EpsCommon
     /** @var string prefix for caching keys in this component */
     public static $CacheKeyPrefix = 'EpsBankTransfer';
 
+    public static function Base64Encode($s)
+    {
+        return str_replace(array('\\', '/'), array(',', '-'), base64_encode($s));
+    }
+
+    public static function Base64Decode($s)
+    {
+        return base64_decode(str_replace(array(',', '-'), array('\\', '/'), $s));
+    }
+
     public static function GetBanksArray($invalidateCache, $config = 'default')
     {
         $key = self::$CacheKeyPrefix . 'BanksArray';
@@ -37,5 +47,4 @@ class EpsCommon
             $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
         CakeLog::write('eps', $message);
     }
-
 }

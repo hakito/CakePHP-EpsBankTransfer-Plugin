@@ -94,8 +94,9 @@ class EpsComponent extends Component
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
-        $eRemittanceIdentifier= rawurlencode(base64_encode(Security::rijndael($remittanceIdentifier, $this->ObscuritySeed, 'encrypt')));
-        $confirmationUrl = Router::url('/eps_bank_transfer/process/'.$eRemittanceIdentifier, true);
+
+        $eRemittanceIdentifier= rawurlencode(EpsCommon::Base64Encode(Security::rijndael($remittanceIdentifier, $this->ObscuritySeed, 'encrypt')));
+        $confirmationUrl = Router::url('/eps_bank_transfer/process/', true).$eRemittanceIdentifier;
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
                         $confirmationUrl,
                         $TransactionOkUrl,
@@ -158,7 +159,7 @@ class EpsComponent extends Component
             );
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
-        $remittanceIdentifier = Security::rijndael(base64_decode($eRemittanceIdentifier), $this->ObscuritySeed, 'decrypt');
+        $remittanceIdentifier = Security::rijndael(EpsCommon::Base64Decode($eRemittanceIdentifier), $this->ObscuritySeed, 'decrypt');
         $controller = &$this->Controller;
 
         $confirmationCallbackWrapper = function($raw, $xmlRemittanceIdentifier, $statusCode) use ($config, $remittanceIdentifier, &$controller)
