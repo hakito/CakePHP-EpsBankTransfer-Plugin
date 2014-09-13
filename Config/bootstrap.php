@@ -30,4 +30,3 @@ if (!defined('EPS_BANK_TRANSFER_APP')) {
 }
 
 require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EpsCommon.php';
-require_once EPS_BANK_TRANSFER_APP . 'Lib' . DS . 'EPS' . DS . 'src' . DS . 'autoloader.php';
