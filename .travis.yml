@@ -13,7 +13,7 @@ env:
     - CAKE_VERSION=2.5
     - CAKE_VERSION=2.6    
 before_script:
-  - git clone https://github.com/FriendsOfCake/travis.git --depth 1 ../travis
+  - git clone https://github.com/hakito/travis.git --depth 1 ../travis
   - ../travis/before_script.sh
 script:
   - ../travis/script.sh
