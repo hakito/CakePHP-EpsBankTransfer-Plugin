@@ -1,0 +1,21 @@
+{
+	"name": "hakito/cakephp-stuzza-eps-banktransfer-plugin",
+	"type": "cakephp-plugin",
+    "description": "CakePhp Plugin for EPS bank transfer payments",
+	"homepage": "https://github.com/hakito/CakePHP-EpsBankTransfer-Plugin",
+    "keywords": ["eps", "payments", "stuzza", "bank transfer", "cakephp"],
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "Gerd Katzenbeisser",
+            "homepage": "https://github.com/hakito/CakePHP-EpsBankTransfer-Plugin/graphs/contributors"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "hakito/php-stuzza-eps-banktransfer": "2.5.*"
+    },
+    "extra": {
+        "installer-name": "EpsBankTransfer"
+    }
+}
