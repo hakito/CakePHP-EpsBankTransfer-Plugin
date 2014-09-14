@@ -111,9 +111,9 @@ class EpsComponent extends Component
                         $referenceIdentifier,
                         $remittanceIdentifier,
                         $this->Total,
-                        $this->Articles,
                         $transferMsgDetails);
-        
+
+        $transferInitiatorDetails->WebshopArticles = $this->Articles;
         $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
         
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
