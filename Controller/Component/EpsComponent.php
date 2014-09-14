@@ -109,10 +109,10 @@ class EpsComponent extends Component
                         $config['account_owner'],
                         $config['iban'],
                         $referenceIdentifier,
-                        $remittanceIdentifier,
                         $this->Total,
                         $transferMsgDetails);
 
+        $transferInitiatorDetails->RemittanceIdentifier = $remittanceIdentifier;
         $transferInitiatorDetails->WebshopArticles = $this->Articles;
         $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
         
