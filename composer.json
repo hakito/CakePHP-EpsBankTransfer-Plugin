@@ -16,6 +16,9 @@
         "hakito/php-stuzza-eps-banktransfer": "dev-master",
         "composer/installers": "*"
     },
+    "require-dev": {
+        "satooshi/php-coveralls": ">=0.6.1"
+    },
     "extra": {
         "installer-name": "EpsBankTransfer"
     }
