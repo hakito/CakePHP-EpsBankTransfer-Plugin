@@ -2,6 +2,8 @@
 
 App::uses('EpsPaymentNotificationsController', 'EpsBankTransfer.Controller');
 App::uses('EpsCommon', 'EpsBankTransfer.Lib');
+App::import('EpsBankTransfer.Test', 'Config');
+App::import('EpsBankTransfer.Test', 'Helper');
 
 use at\externet\eps_bank_transfer;
 
