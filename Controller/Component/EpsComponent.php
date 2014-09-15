@@ -4,6 +4,7 @@ App::uses('Component', 'Controller');
 App::uses('HttpSocket', 'Network/Http');
 App::uses('Folder', 'Utility');
 App::uses('File', 'Utility');
+App::uses('EpsCommon', 'EpsBankTransfer.Lib');
 
 use at\externet\eps_bank_transfer;
 

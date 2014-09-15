@@ -3,10 +3,9 @@
 App::uses('EpsComponent', 'EpsBankTransfer.Controller/Component');
 App::uses('ComponentCollection', 'Controller');
 App::uses('HttpResponse', 'Network/Http');
+App::uses('EpsCommon', 'EpsBankTransfer.Lib');
 
 use at\externet\eps_bank_transfer;
-
-require_once EPS_BANK_TRANSFER_APP . 'Test' . DS . 'Helper.php';
 
 class EpsComponentTest extends CakeTestCase
 {
