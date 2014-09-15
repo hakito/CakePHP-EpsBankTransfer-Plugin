@@ -154,4 +154,15 @@ class EpsComponentTest extends CakeTestCase
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
         $this->assertEqual($actual, null);
     }
+
+    public function testPaymentRedirectErrorInvalidNumberOfMinutes()
+    {
+        $controller = $this->getMock('Controller', array('redirect'));
+
+        $this->Eps->startUp($controller);
+        $this->setExpectedException('InvalidArgumentException', 'Expiration minutes value of "3" is not between 5 and 60.');
+
+        $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null, null, 3);
+        $this->assertEqual($actual, null);
+    }
 }

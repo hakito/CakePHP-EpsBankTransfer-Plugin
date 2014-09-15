@@ -84,6 +84,7 @@ class EpsComponent extends Component
      * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
      * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
      * @param string $bic optional bank BIC if the bank was already choosen on the site. If not given
+     * @param int $expirationMinutes expiration of payment in minutes. Must be between 5 and 60
      * the user will be prompted later to select his bank
      * @throws XmlValidationException when the returned BankResponseDetails does not validate against XSD
      * @throws cakephp\SocketException when communication with SO fails
@@ -91,7 +92,7 @@ class EpsComponent extends Component
      * @return string BankResponseDetails
      * @return array Error info array (ErrorCode, ErrorMsg) from the BankResponseDetails
      */
-    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bic = null)
+    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bic = null, $expirationMinutes = null)
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
@@ -116,6 +117,8 @@ class EpsComponent extends Component
         $transferInitiatorDetails->RemittanceIdentifier = $remittanceIdentifier;
         $transferInitiatorDetails->WebshopArticles = $this->Articles;
         $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
+        if ($expirationMinutes != null)
+            $transferInitiatorDetails->SetExpirationMinutes($expirationMinutes);
         
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
 
