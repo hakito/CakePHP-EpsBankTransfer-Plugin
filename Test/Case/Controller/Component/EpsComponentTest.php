@@ -4,6 +4,7 @@ App::uses('EpsComponent', 'EpsBankTransfer.Controller/Component');
 App::uses('ComponentCollection', 'Controller');
 App::uses('HttpResponse', 'Network/Http');
 App::uses('EpsCommon', 'EpsBankTransfer.Lib');
+App::import('EpsBankTransfer.Test', 'Config');
 
 use at\externet\eps_bank_transfer;
 
