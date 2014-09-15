@@ -31,6 +31,10 @@ class EpsCommon
         return $banks;
     }
 
+    /**
+     * Get scheme operator instance
+     * @return \at\externet\eps_bank_transfer\SoCommunicator
+     */
     public static function GetSoCommunicator()
     {
         if (self::$SoCommunicator == null)
