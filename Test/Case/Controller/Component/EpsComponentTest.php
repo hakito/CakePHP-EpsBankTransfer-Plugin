@@ -25,6 +25,7 @@ class EpsComponentTest extends CakeTestCase
     {
         parent::setUp();        
 
+        date_default_timezone_set("UTC");
         $Collection = new ComponentCollection();
         $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
         $this->Controller = $mockedController;
