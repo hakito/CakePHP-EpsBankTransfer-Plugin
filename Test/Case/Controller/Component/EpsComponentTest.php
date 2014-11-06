@@ -24,6 +24,7 @@ class EpsComponentTest extends CakeTestCase
     public function setUp()
     {
         parent::setUp();
+        CakeLog::levels(array(), false);
 
         $Collection = new ComponentCollection();
         $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
