@@ -23,8 +23,7 @@ class EpsComponentTest extends CakeTestCase
      */
     public function setUp()
     {
-        parent::setUp();
-        CakeLog::levels(array(), false);
+        parent::setUp();        
 
         $Collection = new ComponentCollection();
         $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
@@ -32,6 +31,7 @@ class EpsComponentTest extends CakeTestCase
         $this->Eps = new EpsComponent($Collection);
         $this->Eps->startup($mockedController);
         EpsCommon::$SoCommunicator = $this->getMock('at\externet\eps_bank_transfer\SoCommunicator');
+        EpsCommon::$EnableLogging = false;
         Cache::clear();
     }
 

@@ -8,6 +8,9 @@ class EpsCommon
     /** @var string prefix for caching keys in this component */
     public static $CacheKeyPrefix = 'EpsBankTransfer';
 
+    /** @var boolean Enable logging */
+    public static $EnableLogging = true;
+
     public static function Base64Encode($s)
     {
         return str_replace(array('\\', '/'), array(',', '-'), base64_encode($s));
@@ -47,6 +50,8 @@ class EpsCommon
 
     public static function WriteLog($message, $success = null)
     {
+        if (!self::$EnableLogging)
+            return;
         if ($success != null)
             $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
         CakeLog::write('eps', $message);
