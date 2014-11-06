@@ -166,12 +166,12 @@ class EpsComponent extends Component
         $remittanceIdentifier = Security::rijndael(EpsCommon::Base64Decode($eRemittanceIdentifier), $this->ObscuritySeed, 'decrypt');
         $controller = &$this->Controller;
 
-        $confirmationCallbackWrapper = function($raw, $xmlRemittanceIdentifier, $statusCode) use ($config, $remittanceIdentifier, &$controller)
+        $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)
                 {
-                    if ($remittanceIdentifier != $xmlRemittanceIdentifier)
-                        throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' . $remittanceIdentifier . ' ' . $xmlRemittanceIdentifier);
+                    if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
+                        throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' . $remittanceIdentifier . ' ' . $bankConfirmationDetails->GetRemittanceIdentifier());
 
-                    return call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $xmlRemittanceIdentifier, $statusCode));
+                    return call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $bankConfirmationDetails));
                 };
 
         EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
