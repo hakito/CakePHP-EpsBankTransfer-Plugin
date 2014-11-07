@@ -132,14 +132,14 @@ class EpsComponent extends Component
         {
             $errorCode = '' . $errorDetails->ErrorCode;
             $errorMsg = '' . $errorDetails->ErrorMsg;
-            EpsCommon::WriteLog($logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg, false);
+            EpsCommon::WriteLog("FAILED: " . $logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg);
             return array(
                 'ErrorCode' => $errorCode,
                 'ErrorMsg' => $errorMsg
             );
         }
 
-        EpsCommon::WriteLog($logPrefix, true);
+        EpsCommon::WriteLog("SUCCESS: " . $logPrefix);
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
     }
     

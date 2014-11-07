@@ -48,12 +48,11 @@ class EpsCommon
         return self::$SoCommunicator;
     }
 
-    public static function WriteLog($message, $success = null)
+    public static function WriteLog($message)
     {
         if (!self::$EnableLogging)
             return;
-        if ($success != null)
-            $message = $success ? 'SUCCESS: ' : 'FAILED: ' . $message;
+
         CakeLog::write('eps', $message);
     }
 }
