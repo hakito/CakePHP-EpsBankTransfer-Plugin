@@ -32,6 +32,12 @@ Load the Plugin in yor bootstrap.php
 
 ```php
 CakePlugin::load('EpsBankTransfer', array('routes' => true));
+
+// If you want to collect the log stream configure a logging scope for 'eps':
+CakeLog::config('eps', array(
+	'engine' => 'FileLog',
+	'scopes' => array('eps'),
+));
 ```
 
 Add the following config to your core.php
