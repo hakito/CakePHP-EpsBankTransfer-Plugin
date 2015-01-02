@@ -18,5 +18,8 @@
     },
     "extra": {
         "installer-name": "EpsBankTransfer"
+    },
+    "autoload": {
+        "classmap": ["Lib/EpsCommon.php"]
     }
 }
