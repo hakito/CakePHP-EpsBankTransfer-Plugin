@@ -10,7 +10,7 @@ class EpsPaymentNotificationsController extends EpsBankTransferAppController
     public function process($eRemittanceIdentifier)
     {
         $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier);
-        $this->autoRender = false;
+        exit();
     }
 
 }
