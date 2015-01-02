@@ -174,11 +174,15 @@ class EpsComponent extends Component
                     return call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $bankConfirmationDetails));
                 };
 
-        EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
-                $confirmationCallbackWrapper,
-                empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
-                $rawPostStream,
-                $outputStream);
+        try {
+            EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
+                    $confirmationCallbackWrapper,
+                    empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
+                    $rawPostStream,
+                    $outputStream);
+        } catch (Exception $ex) {
+            EpsCommon::WriteLog('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage());
+        }
         
         EpsCommon::WriteLog('END: Handle confirmation url');
     }
