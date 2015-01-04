@@ -25,7 +25,24 @@ class EpsPaymentNotificationsControllerTest extends ControllerTestCase
     {
         $target = $this->Controller->Eps;
         $target->expects($this->once())
-                ->method('HandleConfirmationUrl');
+                ->method('HandleConfirmationUrl')
+                ->with('foo');
         $this->testAction('/eps_bank_transfer/process/foo');
-    }     
+    }
+
+    public function testProcessRenderedView()
+    {
+        $target = $this->Controller->Eps;
+        $target->expects($this->once())
+                ->method('HandleConfirmationUrl')
+                ->will($this->returnCallback(function($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
+        {
+            $fh = fopen($outputStream, 'w+');
+            fwrite($fh, 'hello world');
+            fclose($fh);
+        }));
+
+        $contents = $this->testAction('/eps_bank_transfer/process/foo', array('return' => 'contents'));
+        $this->assertEquals('hello world', $this->contents);
+    }
 }

@@ -9,8 +9,10 @@ class EpsPaymentNotificationsController extends EpsBankTransferAppController
     
     public function process($eRemittanceIdentifier)
     {
+        ob_start();
         $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier);
-        exit();
+        $contents = ob_get_clean();
+        $this->set('contents', $contents);
     }
 
 }
