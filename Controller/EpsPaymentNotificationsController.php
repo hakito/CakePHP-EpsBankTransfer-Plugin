@@ -2,6 +2,9 @@
 
 App::uses('EpsBankTransferAppController', 'EpsBankTransfer.Controller');
 
+/**
+ * @property EpsComponent Eps
+ */
 class EpsPaymentNotificationsController extends EpsBankTransferAppController
 {
 

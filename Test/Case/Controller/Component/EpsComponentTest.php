@@ -30,6 +30,7 @@ class EpsComponentTest extends CakeTestCase
         $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
         $this->Controller = $mockedController;
         $this->Eps = new EpsComponent($Collection);
+        /** @noinspection PhpParamsInspection */
         $this->Eps->startup($mockedController);
         EpsCommon::$SoCommunicator = $this->getMock('at\externet\eps_bank_transfer\SoCommunicator');
         EpsCommon::$EnableLogging = false;
@@ -43,7 +44,7 @@ class EpsComponentTest extends CakeTestCase
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
         $actual = $this->Eps->GetBanksArray();
-        $this->assertEqual($expected, $actual);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testGetBanksArrayCached()
@@ -51,7 +52,7 @@ class EpsComponentTest extends CakeTestCase
         $expected = 'Foo';
         Cache::write(EpsCommon::$CacheKeyPrefix . 'BanksArray', $expected);
         $actual = $this->Eps->GetBanksArray();
-        $this->assertEqual($actual, $expected);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testGetBanksArrayInvalidateCache()
@@ -60,7 +61,7 @@ class EpsComponentTest extends CakeTestCase
         EpsCommon::GetSoCommunicator()->expects($this->once())
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
-        Cache::write($this->Eps->CacheKeyPrefix . 'BanksArray', 'Bar');
+        Cache::write(EpsCommon::$CacheKeyPrefix . 'BanksArray', 'Bar');
         $actual = $this->Eps->GetBanksArray(true);
         $this->assertEquals($actual, $expected);
     }
@@ -76,19 +77,19 @@ class EpsComponentTest extends CakeTestCase
                 ->will($this->returnValue($expected));
         $this->Eps->GetBanksArray();
         $actual = $this->Eps->GetBanksArray();
-        $this->assertEqual($actual, $expected);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testAddArticleAddsToArray()
     {
         $this->Eps->AddArticle('Name', 3, 45);
-        $this->assertIdentical(empty($this->Eps->Articles), false);
+        $this->assertFalse(empty($this->Eps->Articles));
     }
 
     public function testAddArticleAddWithIdentifier()
     {
         $this->Eps->AddArticle('Name', 3, 45, 'myarticle');
-        $this->assertEqual(isset($this->Eps->Articles['myarticle']), true);
+        $this->assertTrue(isset($this->Eps->Articles['myarticle']));
     }
 
     public function testAddArticleAddContent()
@@ -96,15 +97,15 @@ class EpsComponentTest extends CakeTestCase
         $this->Eps->AddArticle('Foo', 3, 5);
         /** @var eps_bank_transfer\WebshopArticle */
         $article = $this->Eps->Articles[0];
-        $this->assertIdentical($article->Name, "Foo");
-        $this->assertIdentical($article->Count, 3);
-        $this->assertIdentical($article->Price, "0.05");
+        $this->assertSame("Foo", $article->Name);
+        $this->assertSame(3, $article->Count);
+        $this->assertSame("0.05", $article->Price);
     }
 
     public function testAddArticleIncreasesTotal()
     {
         $this->Eps->AddArticle('Foo', 3, "7");
-        $this->assertIdentical($this->Eps->Total, 21);
+        $this->assertSame(21, $this->Eps->Total);
     }
 
     public function testHandleConfirmationUrlCallsSoCommunicator()
@@ -120,7 +121,6 @@ class EpsComponentTest extends CakeTestCase
         $config = Configure::read('EpsBankTransfer');
         $config['VitalityCheckCallback'] = 'MyVitalityCheckCallback';
         Configure::write('EpsBankTransfer', $config);
-        $this->Eps->VitalityCheckCallback = 'MyVitalityCheckCallback';
         EpsCommon::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationurl')
                 ->with($this->anything(), $this->equalTo(array($this->Controller, 'MyVitalityCheckCallback')), 'foo', 'bar');
@@ -135,7 +135,7 @@ class EpsComponentTest extends CakeTestCase
                 ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml')));
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
         $expected = array('ErrorCode' => '004', 'ErrorMsg' => 'merchant not found!');
-        $this->assertEqual($actual, $expected);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testPaymentRedirectSuccess()
@@ -150,21 +150,23 @@ class EpsComponentTest extends CakeTestCase
                 ->method('redirect')
                 ->with('http://epsbank.at/asdk3935jdlf043');
 
+        /** @noinspection PhpParamsInspection */
         $this->Eps->startUp($controller);
         $this->Eps->AddArticle('Foo', 3, "7");
 
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
-        $this->assertEqual($actual, null);
+        $this->assertNull($actual);
     }
 
     public function testPaymentRedirectErrorInvalidNumberOfMinutes()
     {
         $controller = $this->getMock('Controller', array('redirect'));
 
+        /** @noinspection PhpParamsInspection */
         $this->Eps->startUp($controller);
         $this->setExpectedException('InvalidArgumentException', 'Expiration minutes value of "3" is not between 5 and 60.');
 
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null, null, 3);
-        $this->assertEqual($actual, null);
+        $this->assertNull($actual);
     }
 }

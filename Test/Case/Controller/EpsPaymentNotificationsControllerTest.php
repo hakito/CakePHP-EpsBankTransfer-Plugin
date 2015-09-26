@@ -33,6 +33,7 @@ class EpsPaymentNotificationsControllerTest extends ControllerTestCase
     public function testProcessRenderedView()
     {
         $target = $this->Controller->Eps;
+        /** @noinspection PhpUnusedParameterInspection */
         $target->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->will($this->returnCallback(function($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
@@ -42,7 +43,7 @@ class EpsPaymentNotificationsControllerTest extends ControllerTestCase
             fclose($fh);
         }));
 
-        $contents = $this->testAction('/eps_bank_transfer/process/foo', array('return' => 'contents'));
+        $this->testAction('/eps_bank_transfer/process/foo', array('return' => 'contents'));
         $this->assertEquals('hello world', $this->contents);
     }
 }

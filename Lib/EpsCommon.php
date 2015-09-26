@@ -2,7 +2,7 @@
 
 class EpsCommon
 {
-    /** @var eps_bank_transfer\SoCommunicator */
+    /** @var SoCommunicator */
     public static $SoCommunicator;
 
     /** @var string prefix for caching keys in this component */

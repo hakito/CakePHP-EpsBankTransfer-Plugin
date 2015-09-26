@@ -8,6 +8,8 @@ App::uses('EpsCommon', 'EpsBankTransfer.Lib');
 
 use at\externet\eps_bank_transfer;
 
+/** @noinspection PhpInconsistentReturnPointsInspection
+ */
 class EpsComponent extends Component
 {
     /** 
@@ -86,8 +88,8 @@ class EpsComponent extends Component
      * @param string $bic optional bank BIC if the bank was already choosen on the site. If not given
      * @param int $expirationMinutes expiration of payment in minutes. Must be between 5 and 60
      * the user will be prompted later to select his bank
-     * @throws XmlValidationException when the returned BankResponseDetails does not validate against XSD
-     * @throws cakephp\SocketException when communication with SO fails
+     * @throws \XmlValidationException when the returned BankResponseDetails does not validate against XSD
+     * @throws \SocketException when communication with SO fails
      * @throws \UnexpectedValueException when using security suffix without security seed
      * @return string BankResponseDetails
      * @return array Error info array (ErrorCode, ErrorMsg) from the BankResponseDetails
@@ -126,6 +128,7 @@ class EpsComponent extends Component
         $plain = EpsCommon::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails);
         $xml = new SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
+        /** @noinspection PhpUndefinedFieldInspection */
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
 
         if (('' . $errorDetails->ErrorCode) != '000')
@@ -140,17 +143,20 @@ class EpsComponent extends Component
         }
 
         EpsCommon::WriteLog("SUCCESS: " . $logPrefix);
+        /** @noinspection PhpVoidFunctionResultUsedInspection */
+        /** @noinspection PhpUndefinedFieldInspection */
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
     }
-    
+
     /**
      * Call this function when the confirmation URL is called by the Scheme Operator.
+     * @param string $eRemittanceIdentifier encrypted remittance identifier
      * @param string $rawPostStream will read from this stream or file with file_get_contents
      * @param string $outputStream will write to this stream the expected responses for the
      * @throws InvalidCallbackException when callback is not callable
      * @throws CallbackResponseException when callback does not return TRUE
      * @throws XmlValidationException when $rawInputStream does not validate against XSD
-     * @throws cakephp\SocketException when communication with SO fails
+     * @throws \SocketException when communication with SO fails
      * @throws \UnexpectedValueException when using security suffix without security seed
      * @throws UnknownRemittanceIdentifierException when security suffix does not match
      */
