@@ -3,6 +3,7 @@ php:
   - 5.5
   - 5.4
   - 5.3
+  - 7.3
   - hhvm
 env:
   global:
@@ -10,9 +11,9 @@ env:
     - REQUIRE=""
     - COVERALLS=1
   matrix:
-    - CAKE_VERSION=2.4
     - CAKE_VERSION=2.5
-    - CAKE_VERSION=2.6    
+    - CAKE_VERSION=2.6
+    - CAKE_VERSION=2.10
 before_script:
   - git clone https://github.com/hakito/travis.git --depth 1 ../travis
   - ../travis/before_script.sh

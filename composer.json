@@ -14,7 +14,8 @@
     "require": {
         "php": ">=5.3.0",
         "hakito/php-stuzza-eps-banktransfer": "dev-master",
-        "composer/installers": "*"
+        "composer/installers": "*",
+        "cakephp/cakephp": ">=2.5.0 <3.0"
     },
     "extra": {
         "installer-name": "EpsBankTransfer"
