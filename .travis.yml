@@ -1,20 +1,9 @@
 language: php
-php:
-  - 5.6
-  - 7.3
-env:
-  global:
-    - PLUGIN_NAME=EpsBankTransfer
-    - REQUIRE=""
-    - COVERALLS=1
-  matrix:
-    - CAKE_VERSION=2.5
-    - CAKE_VERSION=2.6
-    - CAKE_VERSION=2.10
+service:
+  - docker
 before_script:
-  - git clone https://github.com/hakito/travis.git --depth 1 ../travis
-  - ../travis/before_script.sh
+  - composer require php-coveralls/php-coveralls
 script:
-  - ../travis/script.sh
+  - docker run -v "$(pwd):/plugin" hakito/cake-plugin-test AllEpsBankTransfer --coverage-clover /plugin/build/cover.xml
 after_success:
-  - ../travis/after_success.sh
+  - Vendor/bin/php-coveralls -v --coverage_clover build/cover.xml --json_path build/cover.json
