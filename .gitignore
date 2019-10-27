@@ -7,3 +7,6 @@ app/[Cc]onfig/database.php
 !empty
 /nbproject/private/
 nbproject
+.vscode/
+Vendor/
+composer.lock
