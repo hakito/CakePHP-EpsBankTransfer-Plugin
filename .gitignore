@@ -10,3 +10,4 @@ nbproject
 .vscode/
 Vendor/
 composer.lock
+build/
