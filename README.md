@@ -28,7 +28,7 @@ Add a PSR-4 compatible autoloader to your bootstrap.
 Confguration
 ------------
 
-Load the Plugin in yor bootstrap.php
+Load the Plugin in your bootstrap.php
 
 ```php
 CakePlugin::load('EpsBankTransfer', array('routes' => true));
