@@ -1,4 +1,6 @@
 <?php
+namespace Test;
+
 $baseTestFile = join(DS, array(APP, 'Vendor', 'hakito', 'php-stuzza-eps-banktransfer', 'tests', 'unit', 'at', 'externet', 'eps_bank_transfer', 'BaseTest.php'));
 if (!file_exists($baseTestFile))
 {

@@ -1,10 +1,11 @@
 <?php
 
-App::uses('EpsBankTransferAppController', 'EpsBankTransfer.Controller');
 
 /**
  * @property EpsComponent Eps
  */
+namespace Controller;
+
 class EpsPaymentNotificationsController extends EpsBankTransferAppController
 {
 

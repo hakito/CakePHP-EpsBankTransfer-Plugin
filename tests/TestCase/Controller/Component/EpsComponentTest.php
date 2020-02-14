@@ -1,14 +1,11 @@
 <?php
 
-App::uses('EpsComponent', 'EpsBankTransfer.Controller/Component');
-App::uses('ComponentCollection', 'Controller');
-App::uses('HttpResponse', 'Network/Http');
-App::uses('EpsCommon', 'EpsBankTransfer.Lib');
+namespace Test\Case\Controller\Component;
+
 App::import('EpsBankTransfer.Test', 'Config');
 
-use at\externet\eps_bank_transfer;
 
-class EpsComponentTest extends CakeTestCase
+class EpsComponentTest extends TestCase
 {
 
     /** @var \EpsComponent eps component */
@@ -26,7 +23,7 @@ class EpsComponentTest extends CakeTestCase
         parent::setUp();        
 
         date_default_timezone_set("UTC");
-        $Collection = new ComponentCollection();
+        $Collection = new ComponentRegistry();
         $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
         $this->Controller = $mockedController;
         $this->Eps = new EpsComponent($Collection);

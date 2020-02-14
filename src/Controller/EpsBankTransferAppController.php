@@ -1,8 +1,9 @@
 <?php
 
-App::uses('AppController', 'Controller');
 
 /** @noinspection PhpUndefinedClassInspection */
+namespace Controller;
+
 class EpsBankTransferAppController extends AppController {
 	//
 }

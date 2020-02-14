@@ -1,15 +1,11 @@
 <?php
 
-App::uses('Component', 'Controller');
-App::uses('HttpSocket', 'Network/Http');
-App::uses('Folder', 'Utility');
-App::uses('File', 'Utility');
-App::uses('EpsCommon', 'EpsBankTransfer.Lib');
 
-use at\externet\eps_bank_transfer;
 
 /** @noinspection PhpInconsistentReturnPointsInspection
  */
+namespace Controller\Component;
+
 class EpsComponent extends Component
 {
     /** 

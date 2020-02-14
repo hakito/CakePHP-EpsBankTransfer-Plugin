@@ -1,5 +1,7 @@
 <?php
 
+namespace Lib;
+
 class EpsCommon
 {
     /** @var SoCommunicator */
@@ -53,6 +55,6 @@ class EpsCommon
         if (!self::$EnableLogging)
             return;
 
-        CakeLog::write('eps', $message);
+        Log::write('eps', $message);
     }
 }

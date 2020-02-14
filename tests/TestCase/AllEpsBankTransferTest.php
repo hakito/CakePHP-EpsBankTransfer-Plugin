@@ -2,7 +2,9 @@
 /**
  * All  plugin tests
  */
-class AllEpsBankTransferTest extends CakeTestCase {
+namespace Test\Case;
+
+class AllEpsBankTransferTest extends TestCase {
 
 	/**
 	 * Suite define the tests for this plugin
@@ -12,7 +14,7 @@ class AllEpsBankTransferTest extends CakeTestCase {
 	public static function suite() {
 		$suite = new CakeTestSuite('All test');
 
-		$path = CakePlugin::path('EpsBankTransfer') . 'Test' . DS . 'Case' . DS;
+		$path = Plugin::path('EpsBankTransfer') . 'Test' . DS . 'Case' . DS;
 		$suite->addTestDirectoryRecursive($path);
 
 		return $suite;

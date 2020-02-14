@@ -1,4 +1,6 @@
 <?php
+namespace Test;
+
 Configure::write('EpsBankTransfer', array(
     // required parameters
     'userid' => 'AKLJS231534', // Eps "Händler" id

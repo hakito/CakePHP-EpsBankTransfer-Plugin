@@ -1,11 +1,10 @@
 <?php
 
-App::uses('EpsPaymentNotificationsController', 'EpsBankTransfer.Controller');
-App::uses('EpsCommon', 'EpsBankTransfer.Lib');
+namespace Test\Case\Controller;
+
 App::import('EpsBankTransfer.Test', 'Config');
 App::import('EpsBankTransfer.Test', 'Helper');
 
-use at\externet\eps_bank_transfer;
 
 class EpsPaymentNotificationsControllerTest extends ControllerTestCase
 {
