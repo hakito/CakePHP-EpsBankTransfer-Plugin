@@ -3,6 +3,7 @@ service:
   - docker
 before_script:
   - composer require php-coveralls/php-coveralls --no-interaction
+  - mkdir build
 script:
   - docker run --rm -v "$(pwd):/plugin" -w="/plugin" --entrypoint="" hakito/cake-plugin-test vendor/bin/phpunit --coverage-clover build/cover.xml
 after_success:
