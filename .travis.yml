@@ -3,9 +3,8 @@ service:
   - docker
 before_script:
   - composer require php-coveralls/php-coveralls --no-interaction
-  - mkdir build
 script:
-  - docker run -v "$(pwd):/var/www/html" hakito/easyname-server vendor/bin/phpunit --coverage-clover /var/www/html/build/cover.xml
+  - docker run --rm -v "$(pwd):/plugin" -w="/plugin" --entrypoint="" hakito/cake-plugin-test vendor/bin/phpunit --coverage-clover build/cover.xml
 after_success:
-  - sed "s:name=\"\\/var/www/html:name=\"\\$(pwd):" < build/cover.xml > build/host-cover.xml
+  - sed "s:name=\"\\/plugin:name=\"\\$(pwd):" < build/cover.xml > build/host-cover.xml
   - vendor/bin/php-coveralls -v --coverage_clover build/host-cover.xml --json_path build/cover.json
