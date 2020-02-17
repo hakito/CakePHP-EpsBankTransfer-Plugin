@@ -1,9 +1,17 @@
 <?php
 
-namespace Test\Case\Controller\Component;
+namespace EpsBankTransfer\Test\TestCase\Controller\Component;
 
-App::import('EpsBankTransfer.Test', 'Config');
+use Cake\Cache\Cache;
+use Cake\Controller\ComponentRegistry;
+use Cake\Core\Configure;
+use Cake\Event\Event;
+use Cake\TestSuite\TestCase;
 
+use at\externet\eps_bank_transfer;
+
+use EpsBankTransfer\Controller\Component\EpsComponent;
+use EpsBankTransfer\Plugin;
 
 class EpsComponentTest extends TestCase
 {
@@ -23,21 +31,26 @@ class EpsComponentTest extends TestCase
         parent::setUp();        
 
         date_default_timezone_set("UTC");
-        $Collection = new ComponentRegistry();
-        $mockedController = $this->getMock('Controller', array('afterEpsBankTransferNotification'));
-        $this->Controller = $mockedController;
-        $this->Eps = new EpsComponent($Collection);
-        /** @noinspection PhpParamsInspection */
-        $this->Eps->startup($mockedController);
-        EpsCommon::$SoCommunicator = $this->getMock('at\externet\eps_bank_transfer\SoCommunicator');
-        EpsCommon::$EnableLogging = false;
+        $this->Controller = $this->getMockBuilder('\Cake\Controller\Controller')
+            ->setMethods(['redirect'])
+            ->getMock();
+
+        $registry = new ComponentRegistry($this->Controller);
+        $this->Eps = new EpsComponent($registry);
+
+        $event = new Event('Controller.startup', $this->Controller);
+        $this->Eps->startup($event);
+
+        Plugin::$SoCommunicator = $this->getMockBuilder('at\externet\eps_bank_transfer\SoCommunicator')
+            ->getMock();
+        Plugin::$EnableLogging = false;
         Cache::clear();
     }
 
     public function testGetBanksArray()
     {
         $expected = 'foo';
-        EpsCommon::GetSoCommunicator()->expects($this->once())
+        Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
         $actual = $this->Eps->GetBanksArray();
@@ -47,7 +60,7 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArrayCached()
     {
         $expected = 'Foo';
-        Cache::write(EpsCommon::$CacheKeyPrefix . 'BanksArray', $expected);
+        Cache::write(Plugin::$CacheKeyPrefix . 'BanksArray', $expected);
         $actual = $this->Eps->GetBanksArray();
         $this->assertEquals($expected, $actual);
     }
@@ -55,10 +68,10 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArrayInvalidateCache()
     {
         $expected = 'Foo';
-        EpsCommon::GetSoCommunicator()->expects($this->once())
+        Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
-        Cache::write(EpsCommon::$CacheKeyPrefix . 'BanksArray', 'Bar');
+        Cache::write(Plugin::$CacheKeyPrefix . 'BanksArray', 'Bar');
         $actual = $this->Eps->GetBanksArray(true);
         $this->assertEquals($actual, $expected);
     }
@@ -66,10 +79,10 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArrayEmptyResultNotCached()
     {
         $expected = 'Foo';
-        EpsCommon::GetSoCommunicator()->expects($this->at(0))
+        Plugin::GetSoCommunicator()->expects($this->at(0))
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue(null));
-        EpsCommon::GetSoCommunicator()->expects($this->at(1))
+        Plugin::GetSoCommunicator()->expects($this->at(1))
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
         $this->Eps->GetBanksArray();
@@ -107,7 +120,7 @@ class EpsComponentTest extends TestCase
 
     public function testHandleConfirmationUrlCallsSoCommunicator()
     {
-        EpsCommon::GetSoCommunicator()->expects($this->once())
+        Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationurl')
                 ->with($this->isType('callable'), null, 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
@@ -118,16 +131,18 @@ class EpsComponentTest extends TestCase
         $config = Configure::read('EpsBankTransfer');
         $config['VitalityCheckCallback'] = 'MyVitalityCheckCallback';
         Configure::write('EpsBankTransfer', $config);
-        EpsCommon::GetSoCommunicator()->expects($this->once())
+
+        
+        Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationurl')
-                ->with($this->anything(), $this->equalTo(array($this->Controller, 'MyVitalityCheckCallback')), 'foo', 'bar');
+                ->with($this->anything(), $this->equalTo([$this->Controller, 'MyVitalityCheckCallback']), 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
     }
     
     public function testPaymentRedirectErrorResponse()
     {
         $this->Eps->AddArticle('Foo', 3, "7");
-        EpsCommon::GetSoCommunicator()->expects($this->once())
+        Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
                 ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml')));
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
@@ -137,18 +152,14 @@ class EpsComponentTest extends TestCase
 
     public function testPaymentRedirectSuccess()
     {
-        $controller = $this->getMock('Controller', array('redirect'));
-
-        EpsCommon::GetSoCommunicator()->expects($this->once())
+        Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
                 ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails000.xml')));
 
-        $controller->expects($this->once())
+        $this->Controller->expects($this->once())
                 ->method('redirect')
                 ->with('http://epsbank.at/asdk3935jdlf043');
 
-        /** @noinspection PhpParamsInspection */
-        $this->Eps->startUp($controller);
         $this->Eps->AddArticle('Foo', 3, "7");
 
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
@@ -157,11 +168,7 @@ class EpsComponentTest extends TestCase
 
     public function testPaymentRedirectErrorInvalidNumberOfMinutes()
     {
-        $controller = $this->getMock('Controller', array('redirect'));
-
-        /** @noinspection PhpParamsInspection */
-        $this->Eps->startUp($controller);
-        $this->setExpectedException('InvalidArgumentException', 'Expiration minutes value of "3" is not between 5 and 60.');
+        $this->expectException('InvalidArgumentException', 'Expiration minutes value of "3" is not between 5 and 60.');
 
         $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null, null, 3);
         $this->assertNull($actual);

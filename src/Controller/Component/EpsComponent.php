@@ -1,11 +1,17 @@
 <?php
 
-
-
 /** @noinspection PhpInconsistentReturnPointsInspection
  */
-namespace Controller\Component;
+namespace EpsBankTransfer\Controller\Component;
 
+use Cake\Controller\Component;
+use Cake\Core\Configure;
+use Cake\Routing\Router;
+use Cake\Utility\Security;
+
+use at\externet\eps_bank_transfer;
+
+use EpsBankTransfer\Plugin;
 class EpsComponent extends Component
 {
     /** 
@@ -25,9 +31,9 @@ class EpsComponent extends Component
     /** @var string */
     private $ObscuritySeed;
 
-    public function __construct($collection)
+    public function initialize(array $config)    
     {
-        parent::__construct($collection);
+        parent::initialize($config);
         $defaults = array(
             'ObscuritySuffixLength' => 8,
             'ObscuritySeed'  => Configure::read('Security.salt'),
@@ -35,15 +41,14 @@ class EpsComponent extends Component
         
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
-        $SoCommunicator = EpsCommon::GetSoCommunicator();
+        $SoCommunicator = Plugin::GetSoCommunicator();
         $SoCommunicator->ObscuritySuffixLength = $config['ObscuritySuffixLength'];
         $SoCommunicator->ObscuritySeed = $this->ObscuritySeed = $config['ObscuritySeed'];
     }
 
-    public function startup(\Controller $controller)
+    public function startup($event)
     {
-        parent::startup($controller);
-        $this->Controller = $controller;
+        $this->Controller = $event->getSubject();
     }
 
     /**
@@ -73,7 +78,7 @@ class EpsComponent extends Component
      */
     public function GetBanksArray($invalidateCache = false, $config = 'default')
     {
-        return EpsCommon::GetBanksArray($invalidateCache, $config);
+        return Plugin::GetBanksArray($invalidateCache, $config);
     }
 
     /**
@@ -95,8 +100,8 @@ class EpsComponent extends Component
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
 
-        $eRemittanceIdentifier= rawurlencode(EpsCommon::Base64Encode(Security::encrypt($remittanceIdentifier, $this->ObscuritySeed)));
-        $confirmationUrl = Router::url('/eps_bank_transfer/process/', true).$eRemittanceIdentifier;
+        $eRemittanceIdentifier= rawurlencode(Plugin::Base64Encode(Security::encrypt($remittanceIdentifier, $this->ObscuritySeed)));
+        $confirmationUrl = Router::url(['controller' => 'PaymentNotifications', 'plugin' => 'EpsBankTransfer', 'action' => 'process'], true).$eRemittanceIdentifier;
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
                         $confirmationUrl,
                         $TransactionOkUrl,
@@ -120,9 +125,9 @@ class EpsComponent extends Component
         
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
 
-        EpsCommon::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
-        $plain = EpsCommon::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails);
-        $xml = new SimpleXMLElement($plain);
+        Plugin::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
+        $plain = Plugin::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails);
+        $xml = new \SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
         /** @noinspection PhpUndefinedFieldInspection */
         $errorDetails = &$soAnswer->BankResponseDetails->ErrorDetails;
@@ -131,14 +136,14 @@ class EpsComponent extends Component
         {
             $errorCode = '' . $errorDetails->ErrorCode;
             $errorMsg = '' . $errorDetails->ErrorMsg;
-            EpsCommon::WriteLog("FAILED: " . $logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg);
+            Plugin::WriteLog("FAILED: " . $logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg);
             return array(
                 'ErrorCode' => $errorCode,
                 'ErrorMsg' => $errorMsg
             );
         }
 
-        EpsCommon::WriteLog("SUCCESS: " . $logPrefix);
+        Plugin::WriteLog("SUCCESS: " . $logPrefix);
         /** @noinspection PhpVoidFunctionResultUsedInspection */
         /** @noinspection PhpUndefinedFieldInspection */
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
@@ -158,14 +163,14 @@ class EpsComponent extends Component
      */
     public function HandleConfirmationUrl($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
     {
-        EpsCommon::WriteLog('BEGIN: Handle confirmation url');
+        Plugin::WriteLog('BEGIN: Handle confirmation url');
         $defaults = array(
             'ConfirmationCallback' => 'afterEpsBankTransferNotification', 
             'VitalityCheckCallback' => null,
             );
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
-        $remittanceIdentifier = Security::decrypt(EpsCommon::Base64Decode($eRemittanceIdentifier), $this->ObscuritySeed);
+        $remittanceIdentifier = Security::decrypt(Plugin::Base64Decode($eRemittanceIdentifier), $this->ObscuritySeed);
         $controller = &$this->Controller;
 
         $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)
@@ -177,17 +182,16 @@ class EpsComponent extends Component
                 };
 
         try {
-            EpsCommon::GetSoCommunicator()->HandleConfirmationUrl(
+            Plugin::GetSoCommunicator()->HandleConfirmationUrl(
                     $confirmationCallbackWrapper,
                     empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
                     $rawPostStream,
                     $outputStream);
         } catch (Exception $ex) {
-            EpsCommon::WriteLog('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage());
+            Plugin::WriteLog('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage());
         }
         
-        EpsCommon::WriteLog('END: Handle confirmation url');
+        Plugin::WriteLog('END: Handle confirmation url');
     }
-
 
 }

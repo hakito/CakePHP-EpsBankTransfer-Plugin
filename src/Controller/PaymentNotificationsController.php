@@ -1,15 +1,18 @@
 <?php
 
-
 /**
  * @property EpsComponent Eps
  */
-namespace Controller;
+namespace EpsBankTransfer\Controller;
 
-class EpsPaymentNotificationsController extends EpsBankTransferAppController
+class PaymentNotificationsController extends AppController
 {
 
-    public $components = array('EpsBankTransfer.Eps');
+    public function initialize()
+    {
+        parent::initialize();
+        $this->loadComponent('EpsBankTransfer.Eps', []);
+    }
     
     public function process($eRemittanceIdentifier)
     {

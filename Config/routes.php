@@ -1,8 +1,14 @@
 <?php
 
-/* Add route for handling payment notifications */
-Router::connect('/eps_bank_transfer/process/**', [
-	'plugin' => 'eps_bank_transfer',
-	'controller' => 'eps_payment_notifications',
-	'action' => 'process'
-]);
+use Cake\Routing\RouteBuilder;
+use Cake\Routing\Router;
+
+Router::plugin(
+    'EpsBankTransfer',
+    ['path' => '/eps_bank_transfer'],
+    function (RouteBuilder $routes) {		
+        $routes->get('/process/*', [
+            'controller' => 'PaymentNotifications',
+            'action' => 'process']);
+    }
+);

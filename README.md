@@ -5,7 +5,7 @@
 CakePHP-EpsBankTransfer-Plugin
 ==============================
 
-CakePHP e-payment standard plugin
+CakePHP 3.x plugin
 
 Installation
 ------------
@@ -16,7 +16,7 @@ If you are using composer simply add the following requirement to your composer 
 
 ```json
 {
-    "require": { "hakito/cakephp-stuzza-eps-banktransfer-plugin": "dev-master" }
+    "require": { "hakito/cakephp-stuzza-eps-banktransfer-plugin": "^3.0" }
 }
 ```
 

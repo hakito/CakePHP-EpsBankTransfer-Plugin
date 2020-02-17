@@ -1,8 +1,15 @@
 <?php
 
-namespace Lib;
+namespace EpsBankTransfer;
 
-class EpsCommon
+use Cake\Core\BasePlugin;
+use Cake\Cache\Cache;
+use Cake\Log\Log;
+
+/**
+ * Plugin for EpsBankTransfer
+ */
+class Plugin extends BasePlugin
 {
     /** @var SoCommunicator */
     public static $SoCommunicator;
@@ -29,7 +36,7 @@ class EpsCommon
         $banks = Cache::read($key, $config);
         if (!$banks || $invalidateCache)
         {
-            $banks = EpsCommon::GetSoCommunicator()->TryGetBanksArray();
+            $banks = Plugin::GetSoCommunicator()->TryGetBanksArray();
             if (!empty($banks))
                 Cache::write($key, $banks, $config);
         }
@@ -44,8 +51,8 @@ class EpsCommon
     {
         if (self::$SoCommunicator == null)
         {
-            self::$SoCommunicator = new at\externet\eps_bank_transfer\SoCommunicator();
-            self::$SoCommunicator->LogCallback = array('EpsCommon', 'WriteLog');
+            self::$SoCommunicator = new \at\externet\eps_bank_transfer\SoCommunicator();
+            self::$SoCommunicator->LogCallback = array('Common', 'WriteLog');
         }
         return self::$SoCommunicator;
     }
@@ -55,6 +62,6 @@ class EpsCommon
         if (!self::$EnableLogging)
             return;
 
-        Log::write('eps', $message);
+        Log::write('info', $message, 'EpsBankTransfer');
     }
-}
+} 

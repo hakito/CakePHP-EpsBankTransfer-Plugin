@@ -8,6 +8,6 @@ app/[Cc]onfig/database.php
 /nbproject/private/
 nbproject
 .vscode/
-Vendor/
+vendor/
 composer.lock
 build/
