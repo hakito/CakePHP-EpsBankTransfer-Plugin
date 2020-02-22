@@ -10,8 +10,6 @@ use EpsBankTransfer\PaymentNotificationsController;
 class PaymentNotificationsControllerTest extends TestCase
 {
     use IntegrationTestTrait;
-
-    public $Controller = null;
     
     public function setUp()
     {
