@@ -32,7 +32,7 @@ class EpsComponentTest extends TestCase
 
         date_default_timezone_set("UTC");
         $this->Controller = $this->getMockBuilder('\Cake\Controller\Controller')
-            ->setMethods(['redirect'])
+            ->setMethods(['redirect', 'afterEpsBankTransferNotification'])
             ->getMock();
 
         $registry = new ComponentRegistry($this->Controller);
@@ -121,9 +121,33 @@ class EpsComponentTest extends TestCase
     public function testHandleConfirmationUrlCallsSoCommunicator()
     {
         Plugin::GetSoCommunicator()->expects($this->once())
-                ->method('HandleConfirmationurl')
+                ->method('HandleConfirmationUrl')
                 ->with($this->isType('callable'), null, 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
+    }
+
+    public function testHandleConfirmationUrlCallsControllerCallback()
+    {
+        $remittanceIdentifier = 'remi';
+        $eRemittanceIdentifier = Plugin::Base64Encode(
+            \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('Security.salt')));
+        $bankConfirmationDetails = new eps_bank_transfer\BankConfirmationDetails(
+            new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));        
+        $bankConfirmationDetails->SetRemittanceIdentifier($remittanceIdentifier);            
+
+        $mockSoCommunicatorBehavior = function( $wrapperCallback ) use ($bankConfirmationDetails) {
+            $wrapperCallback('raw', $bankConfirmationDetails);
+        };
+
+        $this->Controller->expects($this->once())
+            ->method('afterEpsBankTransferNotification')
+            ->with('raw', $bankConfirmationDetails);
+
+        Plugin::GetSoCommunicator()->expects($this->once())
+                ->method('HandleConfirmationUrl')
+                ->will($this->returnCallback($mockSoCommunicatorBehavior));
+
+        $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier, 'raw', 'bar');
     }
 
     public function testHandleConfirmationUrlCallsSoCommunicatorWithVitalityCheckCallback()
@@ -134,7 +158,7 @@ class EpsComponentTest extends TestCase
 
         
         Plugin::GetSoCommunicator()->expects($this->once())
-                ->method('HandleConfirmationurl')
+                ->method('HandleConfirmationUrl')
                 ->with($this->anything(), $this->equalTo([$this->Controller, 'MyVitalityCheckCallback']), 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
     }

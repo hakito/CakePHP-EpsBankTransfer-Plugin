@@ -174,12 +174,12 @@ class EpsComponent extends Component
         $controller = &$this->Controller;
 
         $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)
-                {
-                    if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
-                        throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' . $remittanceIdentifier . ' ' . $bankConfirmationDetails->GetRemittanceIdentifier());
-
-                    return call_user_func_array(array($controller, $config['ConfirmationCallback']), array($raw, $bankConfirmationDetails));
-                };
+        {
+            if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
+                throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' . $remittanceIdentifier . ' ' . $bankConfirmationDetails->GetRemittanceIdentifier());
+        
+            return call_user_func_array([$controller, $config['ConfirmationCallback']], [$raw, $bankConfirmationDetails]);
+        };
 
         try {
             Plugin::GetSoCommunicator()->HandleConfirmationUrl(
