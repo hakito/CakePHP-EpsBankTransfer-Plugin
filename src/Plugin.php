@@ -52,7 +52,7 @@ class Plugin extends BasePlugin
         if (self::$SoCommunicator == null)
         {
             self::$SoCommunicator = new \at\externet\eps_bank_transfer\SoCommunicator();
-            self::$SoCommunicator->LogCallback = array('Common', 'WriteLog');
+            self::$SoCommunicator->LogCallback = [Plugin::class, 'WriteLog'];
         }
         return self::$SoCommunicator;
     }
