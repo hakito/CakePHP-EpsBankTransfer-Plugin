@@ -176,7 +176,8 @@ class EpsComponent extends Component
         $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)
         {
             if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
-                throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' . $remittanceIdentifier . ' ' . $bankConfirmationDetails->GetRemittanceIdentifier());
+                throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' 
+                    . $remittanceIdentifier . ' != ' . $bankConfirmationDetails->GetRemittanceIdentifier());
         
             return call_user_func_array([$controller, $config['ConfirmationCallback']], [$raw, $bankConfirmationDetails]);
         };

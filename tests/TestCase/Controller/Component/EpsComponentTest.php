@@ -150,6 +150,26 @@ class EpsComponentTest extends TestCase
         $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier, 'raw', 'bar');
     }
 
+    public function testHandleConfirmationUrlChecksRemittanceIdentifier()
+    {
+        $remittanceIdentifier = 'remi';
+        $eRemittanceIdentifier = Plugin::Base64Encode(
+            \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('Security.salt')));
+        $bankConfirmationDetails = new eps_bank_transfer\BankConfirmationDetails(
+            new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));        
+
+        $mockSoCommunicatorBehavior = function( $wrapperCallback ) use ($bankConfirmationDetails) {
+            $wrapperCallback('raw', $bankConfirmationDetails);
+        };
+
+        Plugin::GetSoCommunicator()->expects($this->once())
+                ->method('HandleConfirmationUrl')
+                ->will($this->returnCallback($mockSoCommunicatorBehavior));
+
+        $this->expectException(eps_bank_transfer\UnknownRemittanceIdentifierException::class);
+        $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier, 'raw', 'bar');
+    }
+
     public function testHandleConfirmationUrlCallsSoCommunicatorWithVitalityCheckCallback()
     {
         $config = Configure::read('EpsBankTransfer');
