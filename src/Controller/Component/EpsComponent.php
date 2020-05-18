@@ -14,14 +14,14 @@ use at\externet\eps_bank_transfer;
 use EpsBankTransfer\Plugin;
 class EpsComponent extends Component
 {
-    /** 
+    /**
      * Webshop articles
      * @var eps_bank_transfer\WebshopArticle[]  */
     public $Articles = array();
 
     /**
-     * Total of amount to pay in cents 
-     * @var int 
+     * Total of amount to pay in cents
+     * @var int
      */
     public $Total = 0;
 
@@ -31,14 +31,14 @@ class EpsComponent extends Component
     /** @var string */
     private $ObscuritySeed;
 
-    public function initialize(array $config)    
+    public function initialize(array $config)
     {
         parent::initialize($config);
         $defaults = array(
             'ObscuritySuffixLength' => 8,
             'ObscuritySeed'  => Configure::read('Security.salt'),
-            );             
-        
+            );
+
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
         $SoCommunicator = Plugin::GetSoCommunicator();
@@ -122,7 +122,7 @@ class EpsComponent extends Component
         $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
         if ($expirationMinutes != null)
             $transferInitiatorDetails->SetExpirationMinutes($expirationMinutes);
-        
+
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
 
         Plugin::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
@@ -165,7 +165,7 @@ class EpsComponent extends Component
     {
         Plugin::WriteLog('BEGIN: Handle confirmation url');
         $defaults = array(
-            'ConfirmationCallback' => 'afterEpsBankTransferNotification', 
+            'ConfirmationCallback' => 'afterEpsBankTransferNotification',
             'VitalityCheckCallback' => null,
             );
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
@@ -176,9 +176,9 @@ class EpsComponent extends Component
         $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)
         {
             if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
-                throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch ' 
+                throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch '
                     . $remittanceIdentifier . ' != ' . $bankConfirmationDetails->GetRemittanceIdentifier());
-        
+
             return call_user_func_array([$controller, $config['ConfirmationCallback']], [$raw, $bankConfirmationDetails]);
         };
 
@@ -191,7 +191,7 @@ class EpsComponent extends Component
         } catch (Exception $ex) {
             Plugin::WriteLog('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage());
         }
-        
+
         Plugin::WriteLog('END: Handle confirmation url');
     }
 

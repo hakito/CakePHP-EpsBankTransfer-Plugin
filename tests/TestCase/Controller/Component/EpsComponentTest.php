@@ -20,7 +20,7 @@ class EpsComponentTest extends TestCase
     public $Eps = null;
 
     public $Controller = null;
-    
+
     /**
      * setUp method
      *
@@ -28,7 +28,7 @@ class EpsComponentTest extends TestCase
      */
     public function setUp()
     {
-        parent::setUp();        
+        parent::setUp();
 
         date_default_timezone_set("UTC");
         $this->Controller = $this->getMockBuilder('\Cake\Controller\Controller')
@@ -132,8 +132,8 @@ class EpsComponentTest extends TestCase
         $eRemittanceIdentifier = Plugin::Base64Encode(
             \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('Security.salt')));
         $bankConfirmationDetails = new eps_bank_transfer\BankConfirmationDetails(
-            new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));        
-        $bankConfirmationDetails->SetRemittanceIdentifier($remittanceIdentifier);            
+            new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));
+        $bankConfirmationDetails->SetRemittanceIdentifier($remittanceIdentifier);
 
         $mockSoCommunicatorBehavior = function( $wrapperCallback ) use ($bankConfirmationDetails) {
             $wrapperCallback('raw', $bankConfirmationDetails);
@@ -156,7 +156,7 @@ class EpsComponentTest extends TestCase
         $eRemittanceIdentifier = Plugin::Base64Encode(
             \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('Security.salt')));
         $bankConfirmationDetails = new eps_bank_transfer\BankConfirmationDetails(
-            new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));        
+            new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));
 
         $mockSoCommunicatorBehavior = function( $wrapperCallback ) use ($bankConfirmationDetails) {
             $wrapperCallback('raw', $bankConfirmationDetails);
@@ -176,13 +176,13 @@ class EpsComponentTest extends TestCase
         $config['VitalityCheckCallback'] = 'MyVitalityCheckCallback';
         Configure::write('EpsBankTransfer', $config);
 
-        
+
         Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->with($this->anything(), $this->equalTo([$this->Controller, 'MyVitalityCheckCallback']), 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
     }
-    
+
     public function testPaymentRedirectErrorResponse()
     {
         $this->Eps->AddArticle('Foo', 3, "7");

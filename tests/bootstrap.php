@@ -15,7 +15,7 @@ $findRoot = function ($root) {
             return $root;
         }
     } while ($root !== $lastRoot);
-    
+
     throw new Exception("Cannot find the root of the application, unable to run tests");
 };
 $root = $findRoot(__FILE__);
@@ -31,8 +31,6 @@ define('CACHE', TMP . 'cache' . DS);
 define('CAKE_CORE_INCLUDE_PATH', join(DS, [ROOT, 'vendor', 'cakephp', 'cakephp']));
 define('CORE_PATH', CAKE_CORE_INCLUDE_PATH . DS);
 define('CAKE', CORE_PATH . 'src' . DS);
-
-// require_once join(DS, [ROOT, 'vendor', 'autoload.php']);
 
 /**
  * Define fallback values for required constants and configuration.

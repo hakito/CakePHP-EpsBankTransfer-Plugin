@@ -13,7 +13,7 @@ class PaymentNotificationsController extends AppController
         parent::initialize();
         $this->loadComponent('EpsBankTransfer.Eps', []);
     }
-    
+
     public function process($eRemittanceIdentifier)
     {
         ob_start();
