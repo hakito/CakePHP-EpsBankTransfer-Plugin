@@ -10,25 +10,25 @@ use EpsBankTransfer\PaymentNotificationsController;
 class PaymentNotificationsControllerTest extends TestCase
 {
     use IntegrationTestTrait;
-    
+
     public function setUp()
     {
         $this->disableErrorHandlerMiddleware();
-        $this->component =  $this->getMockBuilder('EpsBankTransfer\EpsComponent')
+        $this->component =  $this->getMockBuilder(\EpsBankTransfer\Controller\Component\EpsComponent::class)
             ->setMethods(['HandleConfirmationUrl'])
             ->disableOriginalConstructor()
             ->getMock();
     }
-        
+
     public function controllerSpy($event, $controller = null)
     {
         /* @var $controller PaymentNotificationsController */
         $controller = $event->getSubject();
-        $controller->Eps = $this->component;            
+        $controller->Eps = $this->component;
     }
 
     public function testProcessCallsComponent()
-    {        
+    {
         $this->component->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->with('foo');
@@ -48,5 +48,5 @@ class PaymentNotificationsControllerTest extends TestCase
 
         $this->get('/eps_bank_transfer/process/foo', ['return' => 'contents']);
         $this->assertResponseEquals('hello world');
-    }    
+    }
 }
