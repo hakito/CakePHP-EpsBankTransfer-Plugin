@@ -8,7 +8,7 @@ use Cake\Error\ExceptionRenderer;
 use Cake\Log\Engine\FileLog;
 use Cake\Mailer\Transport\MailTransport;
 
-return  
+return
 [
     'App' => ['namespace' => 'EpsBankTransfer\Test\TestApp'],
 
@@ -68,5 +68,7 @@ return
 
     ],
 
-    'Security.salt' => 'DO NOT USE THIS KEY IN PRODUCTION ENVIRONMENT'
+    'Security' => [
+        'salt' => 'DO NOT USE THIS KEY IN PRODUCTION ENVIRONMENT'
+    ]
 ];
