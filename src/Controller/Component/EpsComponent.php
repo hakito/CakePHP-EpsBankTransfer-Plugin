@@ -29,21 +29,26 @@ class EpsComponent extends Component
     private $Controller = null;
 
     /** @var string */
-    private $ObscuritySeed;
+    private $EncryptionKey;
 
     public function initialize(array $config)
     {
         parent::initialize($config);
         $defaults = array(
             'ObscuritySuffixLength' => 8,
-            'ObscuritySeed'  => Configure::read('Security.salt'),
+            'ObscuritySeed'  => 'c2af496ecf4b9f095447a7b9f5c02d20924252bd',
             );
 
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
         $SoCommunicator = Plugin::GetSoCommunicator();
         $SoCommunicator->ObscuritySuffixLength = $config['ObscuritySuffixLength'];
-        $SoCommunicator->ObscuritySeed = $this->ObscuritySeed = $config['ObscuritySeed'];
+        $SoCommunicator->ObscuritySeed = $config['ObscuritySeed'];
+
+        if (empty($config['encryptionKey']))
+            throw new \InvalidArgumentException('No encryptionKey given in config');
+
+        $this->EncryptionKey = $config['encryptionKey'];
     }
 
     public function startup($event)
@@ -100,7 +105,7 @@ class EpsComponent extends Component
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
 
-        $eRemittanceIdentifier= rawurlencode(Plugin::Base64Encode(Security::encrypt($remittanceIdentifier, $this->ObscuritySeed)));
+        $eRemittanceIdentifier= rawurlencode(Plugin::Base64Encode(Security::encrypt($remittanceIdentifier, $this->EncryptionKey)));
         $confirmationUrl = Router::url(['controller' => 'PaymentNotifications', 'plugin' => 'EpsBankTransfer', 'action' => 'process'], true).$eRemittanceIdentifier;
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
                         $confirmationUrl,
@@ -170,7 +175,7 @@ class EpsComponent extends Component
             );
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
-        $remittanceIdentifier = Security::decrypt(Plugin::Base64Decode($eRemittanceIdentifier), $this->ObscuritySeed);
+        $remittanceIdentifier = Security::decrypt(Plugin::Base64Decode($eRemittanceIdentifier), $this->EncryptionKey);
         $controller = &$this->Controller;
 
         $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)

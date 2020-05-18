@@ -51,9 +51,12 @@ Configure::write('EpsBankTransfer', array(
     'bic' => 'GAWIATW1XXX', // BIC code of bank account where money will be sent to
     'account_owner' => 'John Q. Public', // Name of the account owner where money will be sent to
 
+    // Encryption key for sending encrypted remittance identifier as encrypted string
+    'encryptionKey' => 'A_SECRET_KEY_MUST_BE_32_BYTES_LONG',
+
     //// optional parameters
     //'ObscuritySuffixLength' => 8,                            // Number of hash chars appended to remittance identifier
-    //'ObscuritySeed'  => Configure::read('Security.salt'),    // Hash seed or suffix of remittance identifier
+    //'ObscuritySeed'  => 'SOME RANDOM STRING',                // Seed for the random remittance identifier suffix. REQUIRED when ObscuritySuffixLength > 0 provided
     //'ConfirmationCallback' => 'afterEpsBankTransferNotification', // Name of callback function to be called in app controller when confirmation url is called with bankconfirmation details
     //'VitalityCheckCallback' => null                         // Name of callback function to be called when confirmation url is called with vitalitycheck details
 ));

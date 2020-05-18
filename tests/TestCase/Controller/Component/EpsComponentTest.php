@@ -130,7 +130,7 @@ class EpsComponentTest extends TestCase
     {
         $remittanceIdentifier = 'remi';
         $eRemittanceIdentifier = Plugin::Base64Encode(
-            \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('Security.salt')));
+            \Cake\Utility\Security::encrypt($remittanceIdentifier, 'A_SECRET_KEY_MUST_BE_32_BYTES_LONG'));
         $bankConfirmationDetails = new eps_bank_transfer\BankConfirmationDetails(
             new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));
         $bankConfirmationDetails->SetRemittanceIdentifier($remittanceIdentifier);
