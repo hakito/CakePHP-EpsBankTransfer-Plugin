@@ -2,62 +2,142 @@
 [![Coverage Status](https://coveralls.io/repos/hakito/CakePHP-EpsBankTransfer-Plugin/badge.png?branch=master)](https://coveralls.io/r/hakito/CakePHP-EpsBankTransfer-Plugin?branch=master)
 [![Latest Stable Version](https://poser.pugx.org/hakito/cakephp-stuzza-eps-banktransfer-plugin/v/stable.svg)](https://packagist.org/packages/hakito/cakephp-stuzza-eps-banktransfer-plugin) [![Total Downloads](https://poser.pugx.org/hakito/cakephp-stuzza-eps-banktransfer-plugin/downloads.svg)](https://packagist.org/packages/hakito/cakephp-stuzza-eps-banktransfer-plugin) [![Latest Unstable Version](https://poser.pugx.org/hakito/cakephp-stuzza-eps-banktransfer-plugin/v/unstable.svg)](https://packagist.org/packages/hakito/cakephp-stuzza-eps-banktransfer-plugin) [![License](https://poser.pugx.org/hakito/cakephp-stuzza-eps-banktransfer-plugin/license.svg)](https://packagist.org/packages/hakito/cakephp-stuzza-eps-banktransfer-plugin)
 
-CakePHP-EpsBankTransfer-Plugin
-==============================
+# CakePHP-EpsBankTransfer-Plugin
 
 CakePHP 3.x plugin
 
-Installation
-------------
+# Installation
 
-### Using composer
+## Using composer
 
-If you are using composer simply add the following requirement to your composer file:
+If you are using composer simply add the plugin using the command
 
-```json
-{
-    "require": { "hakito/cakephp-stuzza-eps-banktransfer-plugin": "^3.0" }
-}
+```bash
+composer require hakito/cakephp-stuzza-eps-banktransfer-plugin
 ```
 
-### Without composer
+## Without composer
 
 Download the plugin to app/Plugin/EpsBankTransfer. Also download https://github.com/hakito/PHP-Stuzza-EPS-BankTransfer
 Add a PSR-4 compatible autoloader to your bootstrap.
 
-Confguration
-------------
+## Load the plugin
 
-Load the Plugin in your bootstrap.php
+Load the plugin in your bootstrap:
 
 ```php
-CakePlugin::load('EpsBankTransfer', array('routes' => true));
+public function bootstrap()
+{
+    // Call parent to load bootstrap from files.
+    parent::bootstrap();
 
-// If you want to collect the log stream configure a logging scope for 'eps':
-CakeLog::config('eps', array(
-	'engine' => 'FileLog',
-	'scopes' => array('eps'),
-));
+    $this->addPlugin(\EpsBankTransfer\Plugin::class, ['routes' => true]);
+}
 ```
 
-Add the following config to your core.php
+# Confguration
+
+In your app.local.php add an entry for EpsBankTransfer
 
 ```php
-Configure::write('EpsBankTransfer', array(
-    // required parameters
-    'userid' => 'AKLJS231534', // Eps "Händler" id
-    'secret' => 'topSecret', // Secret for authentication
-    'iban' => 'AT611904300234573201', // IBAN code of bank account where money will be sent to
-    'bic' => 'GAWIATW1XXX', // BIC code of bank account where money will be sent to
-    'account_owner' => 'John Q. Public', // Name of the account owner where money will be sent to
+[
+    'EpsBankTransfer', [
+        // required parameters
+        'userid' => 'AKLJS231534', // Eps "Händler" id
+        'secret' => 'topSecret', // Secret for authentication
+        'iban' => 'AT611904300234573201', // IBAN code of bank account where money will be sent to
+        'bic' => 'GAWIATW1XXX', // BIC code of bank account where money will be sent to
+        'account_owner' => 'John Q. Public', // Name of the account owner where money will be sent to
 
-    // Encryption key for sending encrypted remittance identifier as encrypted string
-    'encryptionKey' => 'A_SECRET_KEY_MUST_BE_32_BYTES_LONG',
+        // Encryption key for sending encrypted remittance identifier as encrypted string
+        'encryptionKey' => 'A_SECRET_KEY_MUST_BE_32_BYTES_LONG',
 
-    //// optional parameters
-    //'ObscuritySuffixLength' => 8,                            // Number of hash chars appended to remittance identifier
-    //'ObscuritySeed'  => 'SOME RANDOM STRING',                // Seed for the random remittance identifier suffix. REQUIRED when ObscuritySuffixLength > 0 provided
-    //'ConfirmationCallback' => 'afterEpsBankTransferNotification', // Name of callback function to be called in app controller when confirmation url is called with bankconfirmation details
-    //'VitalityCheckCallback' => null                         // Name of callback function to be called when confirmation url is called with vitalitycheck details
-));
+        //// optional parameters
+        //'ObscuritySuffixLength' => 8,                            // Number of hash chars appended to remittance identifier
+        //'ObscuritySeed'  => 'SOME RANDOM STRING',                // Seed for the random remittance identifier suffix. REQUIRED when ObscuritySuffixLength > 0 provided
+    ]
+];
+```
+
+## Logs
+
+If you want to collect the log stream add this entry to your log configuration in app_local.php
+
+```php
+    'Log' =>
+    [
+        'eps' =>
+        [
+            'className' => FileLog::class,
+            'path' => LOGS,
+            'file' => 'eps',
+            'scopes' => ['eps'],
+            'levels' => ['warning', 'error', 'critical', 'alert', 'emergency'],
+        ],
+    ]
+```
+
+# Usage
+
+In your payment handling controller:
+
+```php
+    // Load the component
+    public function initialize()
+    {
+        parent::initialize();
+        $this->loadComponent('EpsBankTransfer.Eps');
+    }
+
+    // Sample checkout
+    private function _checkoutEPS($orderId)
+    {
+        // Add all articles
+        $this->Eps->AddArticle('Magic dragon', $quantity, $priceInCents);
+
+        // You might also want to add shipping agio as article
+        $this->Eps->AddArticle('Shipping agio', 1, $shippingAgioInCents);
+
+        // remittanceIdentifier could be your shopping card id
+        // okUrl is the return url if payment is successful
+        // nOkUrl is the return url if payment failed / canceled
+        // bic is the BIC code if you provided the user the bank selection on your site
+        $this->Eps->PaymentRedirect($remittanceIdentifier, $okUrl, $nOkUrl, $bic);
+    }
+```
+
+## Event handlers
+
+You must implement at least the following eventhandlers:
+
+### EpsBankTransfer.VitalityCheck
+
+```php
+\Cake\Event\EventManager::instance()->on('EpsBankTransfer.VitalityCheck',
+function ($event, $args)
+{
+  // $args =
+  // [
+  //   'raw' => {string},                  // Raw XML content
+  //   'vitalityCheckDetails' => {object}, // Instance of at\externet\eps_bank_transfer\VitalityCheckDetails
+  // ]
+
+  return ['handled' => true]; // You have to set this otherwise the EPS call is not successful
+});
+```
+
+### EpsBankTransfer.Confirmation', $this
+
+```php
+\Cake\Event\EventManager::instance()->on('EpsBankTransfer.Confirmation',
+function ($event, $args)
+{
+  // $args =
+  // [
+  //   'raw' => {string},                     // Raw XML content
+  //   'bankConfirmationDetails' => {object}, // Instance of at\externet\eps_bank_transfer\BankConfirmationDetails
+  // ]
+
+  return ['handled' => true]; // You have to set this otherwise the EPS call is not successful
+});
 ```

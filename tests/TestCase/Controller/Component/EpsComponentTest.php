@@ -6,6 +6,7 @@ use Cake\Cache\Cache;
 use Cake\Controller\ComponentRegistry;
 use Cake\Core\Configure;
 use Cake\Event\Event;
+use Cake\Event\EventList;
 use Cake\TestSuite\TestCase;
 
 use at\externet\eps_bank_transfer;
@@ -34,6 +35,7 @@ class EpsComponentTest extends TestCase
         $this->Controller = $this->getMockBuilder('\Cake\Controller\Controller')
             ->setMethods(['redirect', 'afterEpsBankTransferNotification'])
             ->getMock();
+        $this->Controller->getEventManager()->setEventList(new EventList());
 
         $registry = new ComponentRegistry($this->Controller);
         $this->Eps = new EpsComponent($registry);
@@ -122,11 +124,11 @@ class EpsComponentTest extends TestCase
     {
         Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationUrl')
-                ->with($this->isType('callable'), null, 'foo', 'bar');
+                ->with($this->isType('callable'), $this->isType('callable'), 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
     }
 
-    public function testHandleConfirmationUrlCallsControllerCallback()
+    public function testHandleConfirmationUrlFiresConfirmationEvent()
     {
         $remittanceIdentifier = 'remi';
         $eRemittanceIdentifier = Plugin::Base64Encode(
@@ -139,15 +141,18 @@ class EpsComponentTest extends TestCase
             $wrapperCallback('raw', $bankConfirmationDetails);
         };
 
-        $this->Controller->expects($this->once())
-            ->method('afterEpsBankTransferNotification')
-            ->with('raw', $bankConfirmationDetails);
-
         Plugin::GetSoCommunicator()->expects($this->once())
-                ->method('HandleConfirmationUrl')
-                ->will($this->returnCallback($mockSoCommunicatorBehavior));
+            ->method('HandleConfirmationUrl')
+            ->will($this->returnCallback($mockSoCommunicatorBehavior));
 
         $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier, 'raw', 'bar');
+
+        $this->assertEventFiredWith('EpsBankTransfer.Confirmation',
+        'args',
+        [
+            'raw' => 'raw',
+            'bankConfirmationDetails' => $bankConfirmationDetails
+        ], $this->Controller->getEventManager());
     }
 
     public function testHandleConfirmationUrlChecksRemittanceIdentifier()
@@ -170,17 +175,24 @@ class EpsComponentTest extends TestCase
         $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier, 'raw', 'bar');
     }
 
-    public function testHandleConfirmationUrlCallsSoCommunicatorWithVitalityCheckCallback()
+    public function testHandleConfirmationUrlCallsFiresVitalityCheckEvent()
     {
-        $config = Configure::read('EpsBankTransfer');
-        $config['VitalityCheckCallback'] = 'MyVitalityCheckCallback';
-        Configure::write('EpsBankTransfer', $config);
-
+        $mockSoCommunicatorBehavior = function( $confirmCallback, $vitalityCallback ) {
+            $vitalityCallback('raw', 'dummy vitality check details');
+        };
 
         Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('HandleConfirmationUrl')
-                ->with($this->anything(), $this->equalTo([$this->Controller, 'MyVitalityCheckCallback']), 'foo', 'bar');
+                ->with($this->isType('callable'), $this->isType('callable'), 'foo', 'bar')
+                ->will($this->returnCallback($mockSoCommunicatorBehavior));
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
+
+        $this->assertEventFiredWith('EpsBankTransfer.VitalityCheck',
+        'args',
+        [
+            'raw' => 'raw',
+            'vitalityCheckDetails' => 'dummy vitality check details'
+        ], $this->Controller->getEventManager());
     }
 
     public function testPaymentRedirectErrorResponse()

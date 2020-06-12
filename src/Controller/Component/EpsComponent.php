@@ -6,6 +6,7 @@ namespace EpsBankTransfer\Controller\Component;
 
 use Cake\Controller\Component;
 use Cake\Core\Configure;
+use Cake\Event\Event;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
 
@@ -169,11 +170,7 @@ class EpsComponent extends Component
     public function HandleConfirmationUrl($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
     {
         Plugin::WriteLog('BEGIN: Handle confirmation url');
-        $defaults = array(
-            'ConfirmationCallback' => 'afterEpsBankTransferNotification',
-            'VitalityCheckCallback' => null,
-            );
-        $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
+        $config = Configure::read('EpsBankTransfer');
 
         $remittanceIdentifier = Security::decrypt(Plugin::Base64Decode($eRemittanceIdentifier), $this->EncryptionKey);
         $controller = &$this->Controller;
@@ -184,13 +181,40 @@ class EpsComponent extends Component
                 throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch '
                     . $remittanceIdentifier . ' != ' . $bankConfirmationDetails->GetRemittanceIdentifier());
 
-            return call_user_func_array([$controller, $config['ConfirmationCallback']], [$raw, $bankConfirmationDetails]);
+            $event = new Event('EpsBankTransfer.Confirmation', $this,
+            [
+                'args' =>
+                [
+                    'raw' => $raw,
+                    'bankConfirmationDetails' => $bankConfirmationDetails
+                ]
+            ]);
+            $this->Controller->getEventManager()->dispatch($event);
+
+            $result = $event->getResult();
+            return !empty($result['handled']);
+        };
+
+        $vitalityCheckCallbackWrapper = function($raw, $vitalityCheckDetails)
+        {
+            $event = new Event('EpsBankTransfer.VitalityCheck', $this,
+            [
+                'args' =>
+                [
+                    'raw' => $raw,
+                    'vitalityCheckDetails' => $vitalityCheckDetails
+                ]
+            ]);
+            $this->Controller->getEventManager()->dispatch($event);
+
+            $result = $event->getResult();
+            return !empty($result['handled']);
         };
 
         try {
             Plugin::GetSoCommunicator()->HandleConfirmationUrl(
                     $confirmationCallbackWrapper,
-                    empty($config['VitalityCheckCallback']) ? null:array($this->Controller, $config['VitalityCheckCallback']),
+                    $vitalityCheckCallbackWrapper,
                     $rawPostStream,
                     $outputStream);
         } catch (Exception $ex) {
