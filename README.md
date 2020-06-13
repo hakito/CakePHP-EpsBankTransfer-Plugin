@@ -71,8 +71,8 @@ If you want to collect the log stream add this entry to your log configuration i
             'className' => FileLog::class,
             'path' => LOGS,
             'file' => 'eps',
-            'scopes' => ['eps'],
-            'levels' => ['warning', 'error', 'critical', 'alert', 'emergency'],
+            'scopes' => ['EpsBankTransfer'],
+            'levels' => ['warning', 'error', 'critical', 'alert', 'emergency', 'info'],
         ],
     ]
 ```

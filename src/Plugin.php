@@ -62,6 +62,6 @@ class Plugin extends BasePlugin
         if (!self::$EnableLogging)
             return;
 
-        Log::write('info', $message, 'EpsBankTransfer');
+        Log::info($message, ['scope' => 'EpsBankTransfer']);
     }
-} 
+}
