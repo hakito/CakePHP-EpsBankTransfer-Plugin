@@ -32,7 +32,7 @@ class Plugin extends BasePlugin
 
     public static function GetBanksArray($invalidateCache, $config = 'default', $testMode = false)
     {
-        $key = self::$CacheKeyPrefix . 'BanksArray';
+        $key = self::$CacheKeyPrefix . 'BanksArray' . ($testMode ? 'test' : 'live');
         $banks = Cache::read($key, $config);
         if (!$banks || $invalidateCache)
         {
