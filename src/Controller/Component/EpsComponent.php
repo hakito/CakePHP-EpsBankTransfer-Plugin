@@ -85,7 +85,9 @@ class EpsComponent extends Component
      */
     public function GetBanksArray($invalidateCache = false, $config = 'default')
     {
-        return Plugin::GetBanksArray($invalidateCache, $config);
+        $settings = Configure::read('EpsBankTransfer');
+        $testMode = !empty($settings['TestMode']);
+        return Plugin::GetBanksArray($invalidateCache, $config, $testMode);
     }
 
     /**
