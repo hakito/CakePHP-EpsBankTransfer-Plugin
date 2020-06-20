@@ -24,7 +24,7 @@
     },
     "require": {
         "cakephp/cakephp": "^3.8",
-        "hakito/php-stuzza-eps-banktransfer": "dev-master@dev"
+        "hakito/php-stuzza-eps-banktransfer": "^2.0"
     },
     "extra": {
         "installer-name": "EpsBankTransfer"
