@@ -12,6 +12,7 @@ use Cake\Utility\Security;
 
 use at\externet\eps_bank_transfer;
 
+use EpsBankTransfer\Exceptions\EpsAnswerException;
 use EpsBankTransfer\Plugin;
 class EpsComponent extends Component
 {
@@ -101,8 +102,8 @@ class EpsComponent extends Component
      * @throws \XmlValidationException when the returned BankResponseDetails does not validate against XSD
      * @throws \SocketException when communication with SO fails
      * @throws \UnexpectedValueException when using security suffix without security seed
-     * @return string BankResponseDetails
-     * @return array Error info array (ErrorCode, ErrorMsg) from the BankResponseDetails
+     * @throws \EpsBankTransfer\Exceptions\EpsAnswerException when BankResponseDetails contains an error
+     * @return returnvalue from Controller::redirect
      */
     public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bic = null, $expirationMinutes = null)
     {
@@ -154,10 +155,7 @@ class EpsComponent extends Component
             $errorCode = '' . $errorDetails->ErrorCode;
             $errorMsg = '' . $errorDetails->ErrorMsg;
             Plugin::WriteLog("FAILED: " . $logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg);
-            return array(
-                'ErrorCode' => $errorCode,
-                'ErrorMsg' => $errorMsg
-            );
+            throw new EpsAnswerException($errorCode, $errorMsg);
         }
 
         Plugin::WriteLog("SUCCESS: " . $logPrefix);
@@ -224,7 +222,7 @@ class EpsComponent extends Component
 
         $testMode = !empty($config['TestMode']);
         try {
-            Plugin::GetSoCommunicator()->HandleConfirmationUrl(
+            Plugin::GetSoCommunicator($testMode)->HandleConfirmationUrl(
                     $confirmationCallbackWrapper,
                     $vitalityCheckCallbackWrapper,
                     $rawPostStream,

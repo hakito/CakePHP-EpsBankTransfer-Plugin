@@ -202,9 +202,14 @@ class EpsComponentTest extends TestCase
         Plugin::GetSoCommunicator()->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
                 ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml')));
-        $actual = $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+        $exception = null;
+        try {
+            $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
+        } catch (\EpsBankTransfer\Exceptions\EpsAnswerException $th) {
+            $exception = $th;
+        }
         $expected = array('ErrorCode' => '004', 'ErrorMsg' => 'merchant not found!');
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals($expected, $exception->ToArray());
     }
 
     public function testPaymentRedirectSuccess()
