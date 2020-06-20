@@ -63,7 +63,7 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArrayCached()
     {
         $expected = 'Foo';
-        Cache::write(Plugin::$CacheKeyPrefix . 'BanksArray', $expected);
+        Cache::write(Plugin::$CacheKeyPrefix . 'BanksArrayLive', $expected);
         $actual = $this->Eps->GetBanksArray();
         $this->assertEquals($expected, $actual);
     }
