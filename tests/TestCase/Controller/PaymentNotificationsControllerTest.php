@@ -32,7 +32,7 @@ class PaymentNotificationsControllerTest extends TestCase
         $this->component->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->with('foo');
-        $this->get('/eps_bank_transfer/process/foo');
+        $this->post('/eps_bank_transfer/process/foo');
     }
 
     public function testProcessRenderedView()
@@ -46,7 +46,7 @@ class PaymentNotificationsControllerTest extends TestCase
             fclose($fh);
         }));
 
-        $this->get('/eps_bank_transfer/process/foo', ['return' => 'contents']);
+        $this->post('/eps_bank_transfer/process/foo', ['return' => 'contents']);
         $this->assertResponseEquals('hello world');
     }
 }

@@ -110,7 +110,14 @@ class EpsComponent extends Component
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
 
         $eRemittanceIdentifier= rawurlencode(Plugin::Base64Encode(Security::encrypt($remittanceIdentifier, $this->EncryptionKey)));
-        $confirmationUrl = Router::url(['controller' => 'PaymentNotifications', 'plugin' => 'EpsBankTransfer', 'action' => 'process'], true).$eRemittanceIdentifier;
+        $confirmationUrl = Router::url(
+            [
+                'controller' => 'PaymentNotifications',
+                'plugin' => 'EpsBankTransfer',
+                'action' => 'process',
+                'eRemittanceIdentifier' => $eRemittanceIdentifier,
+                '_method' => 'POST',
+            ], true);
         $transferMsgDetails = new eps_bank_transfer\TransferMsgDetails(
                         $confirmationUrl,
                         $TransactionOkUrl,
