@@ -43,7 +43,8 @@ class EpsComponentTest extends TestCase
         $event = new Event('Controller.startup', $this->Controller);
         $this->Eps->startup($event);
 
-        Plugin::$SoCommunicator = $this->getMockBuilder('at\externet\eps_bank_transfer\SoCommunicator')
+        $published = new \hakito\Publisher\StaticPublished(Plugin::class);
+        $published->SoCommunicator['live'] = $this->getMockBuilder('at\externet\eps_bank_transfer\SoCommunicator')
             ->getMock();
         Plugin::$EnableLogging = false;
         Cache::clear();

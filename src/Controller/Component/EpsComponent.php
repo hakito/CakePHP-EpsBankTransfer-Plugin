@@ -38,11 +38,12 @@ class EpsComponent extends Component
         $defaults = array(
             'ObscuritySuffixLength' => 8,
             'ObscuritySeed'  => 'c2af496ecf4b9f095447a7b9f5c02d20924252bd',
+            'TestMode' => false
             );
 
         $config = array_merge($defaults, Configure::read('EpsBankTransfer'));
 
-        $SoCommunicator = Plugin::GetSoCommunicator();
+        $SoCommunicator = Plugin::GetSoCommunicator($config['TestMode']);
         $SoCommunicator->ObscuritySuffixLength = $config['ObscuritySuffixLength'];
         $SoCommunicator->ObscuritySeed = $config['ObscuritySeed'];
 
@@ -132,7 +133,8 @@ class EpsComponent extends Component
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
 
         Plugin::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
-        $plain = Plugin::GetSoCommunicator()->SendTransferInitiatorDetails($transferInitiatorDetails);
+        $testMode = !empty($config['TestMode']);
+        $plain = Plugin::GetSoCommunicator($testMode)->SendTransferInitiatorDetails($transferInitiatorDetails);
         $xml = new \SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
         /** @noinspection PhpUndefinedFieldInspection */
@@ -211,6 +213,7 @@ class EpsComponent extends Component
             return !empty($result['handled']);
         };
 
+        $testMode = !empty($config['TestMode']);
         try {
             Plugin::GetSoCommunicator()->HandleConfirmationUrl(
                     $confirmationCallbackWrapper,

@@ -30,6 +30,7 @@
         "installer-name": "EpsBankTransfer"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.0"
+        "phpunit/phpunit": "^6.0",
+        "hakito/publisher": "^1.3"
     }
 }

@@ -11,8 +11,8 @@ use Cake\Log\Log;
  */
 class Plugin extends BasePlugin
 {
-    /** @var SoCommunicator */
-    public static $SoCommunicator;
+    /** @var SoCommunicator[] */
+    private static $SoCommunicator = [];
 
     /** @var string prefix for caching keys in this component */
     public static $CacheKeyPrefix = 'EpsBankTransfer';
@@ -30,13 +30,13 @@ class Plugin extends BasePlugin
         return base64_decode(str_replace(array(',', '-'), array('\\', '/'), $s));
     }
 
-    public static function GetBanksArray($invalidateCache, $config = 'default')
+    public static function GetBanksArray($invalidateCache, $config = 'default', $testMode = false)
     {
         $key = self::$CacheKeyPrefix . 'BanksArray';
         $banks = Cache::read($key, $config);
         if (!$banks || $invalidateCache)
         {
-            $banks = Plugin::GetSoCommunicator()->TryGetBanksArray();
+            $banks = Plugin::GetSoCommunicator($testMode)->TryGetBanksArray();
             if (!empty($banks))
                 Cache::write($key, $banks, $config);
         }
@@ -47,14 +47,15 @@ class Plugin extends BasePlugin
      * Get scheme operator instance
      * @return \at\externet\eps_bank_transfer\SoCommunicator
      */
-    public static function GetSoCommunicator()
+    public static function GetSoCommunicator($testMode = false)
     {
-        if (self::$SoCommunicator == null)
+        $index = empty($testMode) ? 'live' : 'test';
+        if (empty(self::$SoCommunicator[$index]))
         {
-            self::$SoCommunicator = new \at\externet\eps_bank_transfer\SoCommunicator();
-            self::$SoCommunicator->LogCallback = [Plugin::class, 'WriteLog'];
+            self::$SoCommunicator[$index] = new \at\externet\eps_bank_transfer\SoCommunicator($testMode);
+            self::$SoCommunicator[$index]->LogCallback = [Plugin::class, 'WriteLog'];
         }
-        return self::$SoCommunicator;
+        return self::$SoCommunicator[$index];
     }
 
     public static function WriteLog($message)

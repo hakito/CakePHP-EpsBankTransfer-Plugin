@@ -41,20 +41,22 @@ In your app.local.php add an entry for EpsBankTransfer
 
 ```php
 [
-    'EpsBankTransfer', [
+    'EpsBankTransfer',
+    [
         // required parameters
-        'userid' => 'AKLJS231534', // Eps "Händler" id
-        'secret' => 'topSecret', // Secret for authentication
-        'iban' => 'AT611904300234573201', // IBAN code of bank account where money will be sent to
-        'bic' => 'GAWIATW1XXX', // BIC code of bank account where money will be sent to
+        'userid' => 'AKLJS231534',           // Eps "Händler" id
+        'secret' => 'topSecret',             // Secret for authentication
+        'iban' => 'AT611904300234573201',    // IBAN code of bank account where money will be sent to
+        'bic' => 'GAWIATW1XXX',              // BIC code of bank account where money will be sent to
         'account_owner' => 'John Q. Public', // Name of the account owner where money will be sent to
 
         // Encryption key for sending encrypted remittance identifier as encrypted string
         'encryptionKey' => 'A_SECRET_KEY_MUST_BE_32_BYTES_LONG',
 
         //// optional parameters
-        //'ObscuritySuffixLength' => 8,                            // Number of hash chars appended to remittance identifier
-        //'ObscuritySeed'  => 'SOME RANDOM STRING',                // Seed for the random remittance identifier suffix. REQUIRED when ObscuritySuffixLength > 0 provided
+        //'ObscuritySuffixLength' => 8,             // Number of hash chars appended to remittance identifier
+        //'ObscuritySeed'  => 'SOME RANDOM STRING', // Seed for the random remittance identifier suffix. REQUIRED when ObscuritySuffixLength > 0 provided
+        //'TestMode' => true                        // Use EPS test mode URL endpoint
     ]
 ];
 ```
