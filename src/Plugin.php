@@ -16,6 +16,7 @@ class Plugin extends BasePlugin
 
     /** @var string prefix for caching keys in this component */
     public static $CacheKeyPrefix = 'EpsBankTransfer';
+    public static $LogScope = 'EpsBankTransfer';
 
     /** @var boolean Enable logging */
     public static $EnableLogging = true;
@@ -53,16 +54,8 @@ class Plugin extends BasePlugin
         if (empty(self::$SoCommunicator[$index]))
         {
             self::$SoCommunicator[$index] = new \at\externet\eps_bank_transfer\SoCommunicator($testMode);
-            self::$SoCommunicator[$index]->LogCallback = [Plugin::class, 'WriteLog'];
+            self::$SoCommunicator[$index]->LogCallback = function($message) { Log::info('EpsLib: ' . $message, ['scope' => Plugin::$LogScope]); };
         }
         return self::$SoCommunicator[$index];
-    }
-
-    public static function WriteLog($message)
-    {
-        if (!self::$EnableLogging)
-            return;
-
-        Log::info($message, ['scope' => 'EpsBankTransfer']);
     }
 }

@@ -7,6 +7,7 @@ namespace EpsBankTransfer\Controller\Component;
 use Cake\Controller\Component;
 use Cake\Core\Configure;
 use Cake\Event\Event;
+use Cake\Log\Log;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
 
@@ -142,7 +143,7 @@ class EpsComponent extends Component
 
         $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
 
-        Plugin::WriteLog($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount);
+        Log::info($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount, ['scope' => Plugin::$LogScope]);
         $testMode = !empty($config['TestMode']);
         $plain = Plugin::GetSoCommunicator($testMode)->SendTransferInitiatorDetails($transferInitiatorDetails);
         $xml = new \SimpleXMLElement($plain);
@@ -154,11 +155,12 @@ class EpsComponent extends Component
         {
             $errorCode = '' . $errorDetails->ErrorCode;
             $errorMsg = '' . $errorDetails->ErrorMsg;
-            Plugin::WriteLog("FAILED: " . $logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg);
+
+            Log::error($logPrefix . ' Error ' . $errorCode . ' ' . $errorMsg, ['scope' => Plugin::$LogScope]);
             throw new EpsAnswerException($errorCode, $errorMsg);
         }
 
-        Plugin::WriteLog("SUCCESS: " . $logPrefix);
+        Log::info($logPrefix . ' SUCCEEDED', ['scope' => Plugin::$LogScope]);
         /** @noinspection PhpVoidFunctionResultUsedInspection */
         /** @noinspection PhpUndefinedFieldInspection */
         return $this->Controller->redirect('' . $soAnswer->BankResponseDetails->ClientRedirectUrl);
@@ -178,7 +180,7 @@ class EpsComponent extends Component
      */
     public function HandleConfirmationUrl($eRemittanceIdentifier, $rawPostStream = 'php://input', $outputStream = 'php://output')
     {
-        Plugin::WriteLog('BEGIN: Handle confirmation url');
+        Log::info('BEGIN: Handle confirmation url', ['scope' => Plugin::$LogScope]);
         $config = Configure::read('EpsBankTransfer');
 
         $remittanceIdentifier = Security::decrypt(Plugin::Base64Decode($eRemittanceIdentifier), $this->EncryptionKey);
@@ -228,10 +230,10 @@ class EpsComponent extends Component
                     $rawPostStream,
                     $outputStream);
         } catch (Exception $ex) {
-            Plugin::WriteLog('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage());
+            Log::error('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage(), ['scope' => Plugin::$LogScope]);
         }
 
-        Plugin::WriteLog('END: Handle confirmation url');
+        Log::info('END: Handle confirmation url', ['scope' => Plugin::$LogScope]);
     }
 
 }
