@@ -97,16 +97,16 @@ class EpsComponent extends Component
      * @param string $remittanceIdentifier Identifier for the given order. For example Order.id
      * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
      * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
-     * @param string $bic optional bank BIC if the bank was already choosen on the site. If not given
+     * @param string $bankName optional bank name from GetBanksArray if the bank was already choosen on the site. 
+     * If not given the user will be prompted later to select his bank
      * @param int $expirationMinutes expiration of payment in minutes. Must be between 5 and 60
-     * the user will be prompted later to select his bank
      * @throws \XmlValidationException when the returned BankResponseDetails does not validate against XSD
      * @throws \SocketException when communication with SO fails
      * @throws \UnexpectedValueException when using security suffix without security seed
      * @throws \EpsBankTransfer\Exceptions\EpsAnswerException when BankResponseDetails contains an error
      * @return returnvalue from Controller::redirect
      */
-    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bic = null, $expirationMinutes = null)
+    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankName = null, $expirationMinutes = null)
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
@@ -137,6 +137,16 @@ class EpsComponent extends Component
 
         $transferInitiatorDetails->RemittanceIdentifier = $remittanceIdentifier;
         $transferInitiatorDetails->WebshopArticles = $this->Articles;
+
+        $bic = null;
+        $epsUrl = null;
+        if ($bankName != null)
+        {
+            $banks = $this->GetBanksArray();
+            if (!empty($banks[$bankName]))
+                [$bic, $epsUrl] = $banks;
+        }
+
         $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
         if ($expirationMinutes != null)
             $transferInitiatorDetails->SetExpirationMinutes($expirationMinutes);
@@ -145,7 +155,7 @@ class EpsComponent extends Component
 
         Log::info($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount, ['scope' => Plugin::$LogScope]);
         $testMode = !empty($config['TestMode']);
-        $plain = Plugin::GetSoCommunicator($testMode)->SendTransferInitiatorDetails($transferInitiatorDetails);
+        $plain = Plugin::GetSoCommunicator($testMode)->SendTransferInitiatorDetails($transferInitiatorDetails, $epsUrl);
         $xml = new \SimpleXMLElement($plain);
         $soAnswer = $xml->children(eps_bank_transfer\XMLNS_epsp);
         /** @noinspection PhpUndefinedFieldInspection */
