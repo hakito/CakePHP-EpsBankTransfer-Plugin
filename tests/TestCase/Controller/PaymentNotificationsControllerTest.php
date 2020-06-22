@@ -3,16 +3,14 @@ namespace EpsBankTransfer\Test\TestCase\Controller;
 
 use Cake\TestSuite\TestCase;
 use Cake\TestSuite\IntegrationTestTrait;
-use EpsBankTransfer\Test\TestApp\Application;
-
-use EpsBankTransfer\PaymentNotificationsController;
 
 class PaymentNotificationsControllerTest extends TestCase
 {
     use IntegrationTestTrait;
 
-    public function setUp()
+    public function setUp(): void
     {
+        parent::setUp();
         $this->disableErrorHandlerMiddleware();
         $this->component =  $this->getMockBuilder(\EpsBankTransfer\Controller\Component\EpsComponent::class)
             ->setMethods(['HandleConfirmationUrl'])

@@ -2,40 +2,44 @@
 
 namespace EpsBankTransfer\Test\TestCase\Controller\Component;
 
+use at\externet\eps_bank_transfer;
 use Cake\Cache\Cache;
 use Cake\Controller\ComponentRegistry;
+use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\Event\Event;
 use Cake\Event\EventList;
 use Cake\TestSuite\TestCase;
-
-use at\externet\eps_bank_transfer;
-
+use Cake\Event\EventManager;
 use EpsBankTransfer\Controller\Component\EpsComponent;
 use EpsBankTransfer\Plugin;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class EpsComponentTest extends TestCase
 {
 
-    /** @var \EpsComponent eps component */
+    /** @var EpsComponent eps component */
     public $Eps = null;
 
+    /** @var MockObject|Controller */
     public $Controller = null;
 
-    /**
-     * setUp method
-     *
-     * @return void
-     */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
+        $this->loadPlugins([\EpsBankTransfer\Plugin::class => ['routes' => true]]);
+
         date_default_timezone_set("UTC");
+
+         /** @var MockObject|Controller */
         $this->Controller = $this->getMockBuilder('\Cake\Controller\Controller')
             ->setMethods(['redirect', 'afterEpsBankTransferNotification'])
             ->getMock();
-        $this->Controller->getEventManager()->setEventList(new EventList());
+
+        /** @var EventManager */
+        $eventmanager = $this->Controller->getEventManager();
+        $eventmanager->setEventList(new EventList());
 
         $registry = new ComponentRegistry($this->Controller);
         $this->Eps = new EpsComponent($registry);
@@ -53,7 +57,9 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArray()
     {
         $expected = 'foo';
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
         $actual = $this->Eps->GetBanksArray();
@@ -71,7 +77,9 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArrayInvalidateCache()
     {
         $expected = 'Foo';
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
         Cache::write(Plugin::$CacheKeyPrefix . 'BanksArray', 'Bar');
@@ -82,10 +90,12 @@ class EpsComponentTest extends TestCase
     public function testGetBanksArrayEmptyResultNotCached()
     {
         $expected = 'Foo';
-        Plugin::GetSoCommunicator()->expects($this->at(0))
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->at(0))
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue(null));
-        Plugin::GetSoCommunicator()->expects($this->at(1))
+        $communicator->expects($this->at(1))
                 ->method('TryGetBanksArray')
                 ->will($this->returnValue($expected));
         $this->Eps->GetBanksArray();
@@ -123,7 +133,9 @@ class EpsComponentTest extends TestCase
 
     public function testHandleConfirmationUrlCallsSoCommunicator()
     {
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->with($this->isType('callable'), $this->isType('callable'), 'foo', 'bar');
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
@@ -142,7 +154,9 @@ class EpsComponentTest extends TestCase
             $wrapperCallback('raw', $bankConfirmationDetails);
         };
 
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
             ->method('HandleConfirmationUrl')
             ->will($this->returnCallback($mockSoCommunicatorBehavior));
 
@@ -158,9 +172,9 @@ class EpsComponentTest extends TestCase
 
     public function testHandleConfirmationUrlChecksRemittanceIdentifier()
     {
-        $remittanceIdentifier = 'remi';
+        $remittanceIdentifier = 'invalid_remittance_identifier';
         $eRemittanceIdentifier = Plugin::Base64Encode(
-            \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('Security.salt')));
+            \Cake\Utility\Security::encrypt($remittanceIdentifier, Configure::read('EpsBankTransfer.encryptionKey')));
         $bankConfirmationDetails = new eps_bank_transfer\BankConfirmationDetails(
             new \SimpleXMLElement(eps_bank_transfer\BaseTest::GetEpsData('BankConfirmationDetailsWithoutSignature.xml')));
 
@@ -168,7 +182,9 @@ class EpsComponentTest extends TestCase
             $wrapperCallback('raw', $bankConfirmationDetails);
         };
 
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->will($this->returnCallback($mockSoCommunicatorBehavior));
 
@@ -182,7 +198,9 @@ class EpsComponentTest extends TestCase
             $vitalityCallback('raw', 'dummy vitality check details');
         };
 
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->with($this->isType('callable'), $this->isType('callable'), 'foo', 'bar')
                 ->will($this->returnCallback($mockSoCommunicatorBehavior));
@@ -199,7 +217,9 @@ class EpsComponentTest extends TestCase
     public function testPaymentRedirectErrorResponse()
     {
         $this->Eps->AddArticle('Foo', 3, "7");
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
                 ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml')));
         $exception = null;
@@ -214,7 +234,9 @@ class EpsComponentTest extends TestCase
 
     public function testPaymentRedirectSuccess()
     {
-        Plugin::GetSoCommunicator()->expects($this->once())
+        /** @var MockObject */
+        $communicator = Plugin::GetSoCommunicator();
+        $communicator->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
                 ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails000.xml')));
 

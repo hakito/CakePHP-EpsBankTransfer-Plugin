@@ -34,7 +34,7 @@ class EpsComponent extends Component
     /** @var string */
     private $EncryptionKey;
 
-    public function initialize(array $config)
+    public function initialize(array $config): void
     {
         parent::initialize($config);
         $defaults = array(
@@ -229,8 +229,9 @@ class EpsComponent extends Component
                     $vitalityCheckCallbackWrapper,
                     $rawPostStream,
                     $outputStream);
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             Log::error('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage(), ['scope' => Plugin::$LogScope]);
+            throw $ex;
         }
 
         Log::info('END: Handle confirmation url', ['scope' => Plugin::$LogScope]);

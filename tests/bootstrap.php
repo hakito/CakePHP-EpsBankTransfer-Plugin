@@ -42,8 +42,10 @@ require_once join(DS, [CORE_PATH, 'config', 'bootstrap.php']);
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
+use Cake\Utility\Security;
 
 Configure::config('default', new PhpConfig());
 Configure::load('app', 'default', false);
 Configure::load('eps', 'default', false);
 Cache::setConfig(Configure::consume('Cache'));
+Security::setSalt(Configure::consume('Security.salt'));

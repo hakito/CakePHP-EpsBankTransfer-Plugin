@@ -4,7 +4,7 @@
 
 # CakePHP-EpsBankTransfer-Plugin
 
-CakePHP 3.x plugin
+CakePHP 4.x plugin
 
 # Installation
 
@@ -85,7 +85,7 @@ In your payment handling controller:
 
 ```php
     // Load the component
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
         $this->loadComponent('EpsBankTransfer.Eps');
