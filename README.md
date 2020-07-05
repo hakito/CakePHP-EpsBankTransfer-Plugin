@@ -103,8 +103,8 @@ In your payment handling controller:
         // remittanceIdentifier could be your shopping card id
         // okUrl is the return url if payment is successful
         // nOkUrl is the return url if payment failed / canceled
-        // name of the bank from GetBanksArray
-        $this->Eps->PaymentRedirect($remittanceIdentifier, $okUrl, $nOkUrl, $bankName);
+        // BIC of the bank from GetBanksArray
+        $this->Eps->PaymentRedirect($remittanceIdentifier, $okUrl, $nOkUrl, $bic);
     }
 ```
 

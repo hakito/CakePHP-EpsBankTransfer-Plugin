@@ -97,7 +97,7 @@ class EpsComponent extends Component
      * @param string $remittanceIdentifier Identifier for the given order. For example Order.id
      * @param string $TransactionOkUrl The url the customer is redirected to if transaction was successful
      * @param string $TransactionNokUrl The url the customer is redirected to if transaction was not successful
-     * @param string $bankName optional bank name from GetBanksArray if the bank was already choosen on the site. 
+     * @param string $bic optional bank name from GetBanksArray if the bank was already choosen on the site.
      * If not given the user will be prompted later to select his bank
      * @param int $expirationMinutes expiration of payment in minutes. Must be between 5 and 60
      * @throws \XmlValidationException when the returned BankResponseDetails does not validate against XSD
@@ -106,7 +106,7 @@ class EpsComponent extends Component
      * @throws \EpsBankTransfer\Exceptions\EpsAnswerException when BankResponseDetails contains an error
      * @return returnvalue from Controller::redirect
      */
-    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bankName = null, $expirationMinutes = null)
+    public function PaymentRedirect($remittanceIdentifier, $TransactionOkUrl, $TransactionNokUrl, $bic = null, $expirationMinutes = null)
     {
         $config = Configure::read('EpsBankTransfer');
         $referenceIdentifier = uniqid($remittanceIdentifier . ' ');
@@ -138,13 +138,12 @@ class EpsComponent extends Component
         $transferInitiatorDetails->RemittanceIdentifier = $remittanceIdentifier;
         $transferInitiatorDetails->WebshopArticles = $this->Articles;
 
-        $bic = null;
         $epsUrl = null;
-        if ($bankName != null)
+        if ($bic != null)
         {
             $banks = $this->GetBanksArray();
-            if (!empty($banks[$bankName]))
-                [$bic, $epsUrl] = $banks;
+            if (!empty($banks[$bic]))
+                $epsUrl = $banks[$bic]['epsUrl'];
         }
 
         $transferInitiatorDetails->OrderingCustomerOfiIdentifier = $bic;
