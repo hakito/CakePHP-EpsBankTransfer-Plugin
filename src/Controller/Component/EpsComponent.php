@@ -1,20 +1,17 @@
 <?php
 
-/** @noinspection PhpInconsistentReturnPointsInspection
- */
 namespace EpsBankTransfer\Controller\Component;
 
+use at\externet\eps_bank_transfer;
 use Cake\Controller\Component;
 use Cake\Core\Configure;
 use Cake\Event\Event;
 use Cake\Log\Log;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
-
-use at\externet\eps_bank_transfer;
-
 use EpsBankTransfer\Exceptions\EpsAnswerException;
 use EpsBankTransfer\Plugin;
+
 class EpsComponent extends Component
 {
     /**
@@ -150,9 +147,9 @@ class EpsComponent extends Component
         if ($expirationMinutes != null)
             $transferInitiatorDetails->SetExpirationMinutes($expirationMinutes);
 
-        $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . '] ConfUrl: ' . $confirmationUrl;
+        $logPrefix = 'SendPaymentOrder [' . $referenceIdentifier . ']';
 
-        Log::info($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount, ['scope' => Plugin::$LogScope]);
+        Log::info($logPrefix . ' over ' . $transferInitiatorDetails->InstructedAmount . ' ConfUrl: ' . $confirmationUrl, ['scope' => Plugin::$LogScope]);
         $testMode = !empty($config['TestMode']);
         $plain = Plugin::GetSoCommunicator($testMode)->SendTransferInitiatorDetails($transferInitiatorDetails, $epsUrl);
         $xml = new \SimpleXMLElement($plain);
@@ -193,42 +190,65 @@ class EpsComponent extends Component
         $config = Configure::read('EpsBankTransfer');
 
         $remittanceIdentifier = Security::decrypt(Plugin::Base64Decode($eRemittanceIdentifier), $this->EncryptionKey);
-        $controller = &$this->Controller;
 
-        $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($config, $remittanceIdentifier, &$controller)
+        $confirmationCallbackWrapper = function($raw, $bankConfirmationDetails) use ($remittanceIdentifier)
         {
-            if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
-                throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch '
-                    . $remittanceIdentifier . ' != ' . $bankConfirmationDetails->GetRemittanceIdentifier());
+            try
+            {
+                if ($remittanceIdentifier != $bankConfirmationDetails->GetRemittanceIdentifier())
+                    throw new eps_bank_transfer\UnknownRemittanceIdentifierException('Remittance identifier mismatch '
+                        . $remittanceIdentifier . ' != ' . $bankConfirmationDetails->GetRemittanceIdentifier());
 
-            $event = new Event('EpsBankTransfer.Confirmation', $this,
-            [
-                'args' =>
+                $event = new Event('EpsBankTransfer.Confirmation', $this,
                 [
-                    'raw' => $raw,
-                    'bankConfirmationDetails' => $bankConfirmationDetails
-                ]
-            ]);
-            $this->Controller->getEventManager()->dispatch($event);
+                    'args' =>
+                    [
+                        'raw' => $raw,
+                        'bankConfirmationDetails' => $bankConfirmationDetails
+                    ]
+                ]);
+                Log::info('Dispatching EpsBankTransfer.Confirmation', ['scope' => Plugin::$LogScope]);
+                $this->Controller->getEventManager()->dispatch($event);
 
-            $result = $event->getResult();
-            return !empty($result['handled']);
+                $result = $event->getResult();
+                if (empty($result['handled']))
+                    Log::error('EpsBankTransfer.Confirmation was unhandled', ['scope' => Plugin::$LogScope]);
+                return !empty($result['handled']);
+            }
+            catch (\Throwable $e)
+            {
+                Log::error('Exception in confirmationCallbackWrapper: ' . $e->getMessage(), ['scope' => Plugin::$LogScope]);
+                Log::debug($e->getTraceAsString(), ['scope' => Plugin::$LogScope]);
+                return false;
+            }
         };
 
         $vitalityCheckCallbackWrapper = function($raw, $vitalityCheckDetails)
         {
-            $event = new Event('EpsBankTransfer.VitalityCheck', $this,
-            [
-                'args' =>
+            try
+            {
+                $event = new Event('EpsBankTransfer.VitalityCheck', $this,
                 [
-                    'raw' => $raw,
-                    'vitalityCheckDetails' => $vitalityCheckDetails
-                ]
-            ]);
-            $this->Controller->getEventManager()->dispatch($event);
+                    'args' =>
+                    [
+                        'raw' => $raw,
+                        'vitalityCheckDetails' => $vitalityCheckDetails
+                    ]
+                ]);
+                Log::info('Dispatching EpsBankTransfer.VitalityCheck', ['scope' => Plugin::$LogScope]);
+                $this->Controller->getEventManager()->dispatch($event);
 
-            $result = $event->getResult();
-            return !empty($result['handled']);
+                $result = $event->getResult();
+                if (empty($result['handled']))
+                    Log::error('EpsBankTransfer.VitalityCheck was unhandled', ['scope' => Plugin::$LogScope]);
+                return !empty($result['handled']);
+            }
+            catch (\Throwable $e)
+            {
+                Log::error('Exception in vitalityCheckCallbackWrapper: ' . $e->getMessage(), ['scope' => Plugin::$LogScope]);
+                Log::debug($e->getTraceAsString(), ['scope' => Plugin::$LogScope]);
+                return false;
+            }
         };
 
         $testMode = !empty($config['TestMode']);
@@ -238,8 +258,9 @@ class EpsComponent extends Component
                     $vitalityCheckCallbackWrapper,
                     $rawPostStream,
                     $outputStream);
-        } catch (\Exception $ex) {
+        } catch (\Throwable $ex) {
             Log::error('Exception in SoCommunicator::HandleConfirmationUrl: ' . $ex->getMessage(), ['scope' => Plugin::$LogScope]);
+            Log::debug($ex->getTraceAsString(), ['scope' => Plugin::$LogScope]);
             throw $ex;
         }
 

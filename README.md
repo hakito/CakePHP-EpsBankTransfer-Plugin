@@ -74,7 +74,7 @@ If you want to collect the log stream add this entry to your log configuration i
             'path' => LOGS,
             'file' => 'eps',
             'scopes' => ['EpsBankTransfer'],
-            'levels' => ['warning', 'error', 'critical', 'alert', 'emergency', 'info'],
+            'levels' => ['warning', 'error', 'critical', 'alert', 'emergency', 'info', 'debug'],
         ],
     ]
 ```
