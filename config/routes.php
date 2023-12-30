@@ -8,7 +8,7 @@ $routes->plugin(
     ['path' => '/eps_bank_transfer'],
     function (RouteBuilder $routes)
     {
-        $routes->post('/process/:eRemittanceIdentifier',
+        $routes->post('/process/{eRemittanceIdentifier}',
         [
             'controller' => 'PaymentNotifications',
             'action' => 'process'
