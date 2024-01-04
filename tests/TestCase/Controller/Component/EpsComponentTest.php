@@ -11,6 +11,8 @@ use Cake\Event\Event;
 use Cake\Event\EventList;
 use Cake\TestSuite\TestCase;
 use Cake\Event\EventManager;
+use Cake\Http\Response;
+use Cake\Http\ServerRequest;
 use EpsBankTransfer\Controller\Component\EpsComponent;
 use EpsBankTransfer\Plugin;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,9 +34,12 @@ class EpsComponentTest extends TestCase
 
         date_default_timezone_set("UTC");
 
-         /** @var MockObject|Controller */
+        $request = new ServerRequest();
+        $response = new Response();
+        /** @var MockObject|Controller */
         $this->Controller = $this->getMockBuilder('\Cake\Controller\Controller')
-            ->setMethods(['redirect', 'afterEpsBankTransferNotification'])
+            ->setConstructorArgs([$request, $response])
+            ->onlyMethods(['redirect'])
             ->getMock();
 
         /** @var EventManager */
@@ -61,7 +66,7 @@ class EpsComponentTest extends TestCase
         $communicator = Plugin::GetSoCommunicator();
         $communicator->expects($this->once())
                 ->method('TryGetBanksArray')
-                ->will($this->returnValue($expected));
+                ->willReturn($expected);
         $actual = $this->Eps->GetBanksArray();
         $this->assertEquals($expected, $actual);
     }
@@ -81,7 +86,7 @@ class EpsComponentTest extends TestCase
         $communicator = Plugin::GetSoCommunicator();
         $communicator->expects($this->once())
                 ->method('TryGetBanksArray')
-                ->will($this->returnValue($expected));
+                ->willReturn($expected);
         Cache::write(Plugin::$CacheKeyPrefix . 'BanksArray', 'Bar');
         $actual = $this->Eps->GetBanksArray(true);
         $this->assertEquals($actual, $expected);
@@ -92,12 +97,9 @@ class EpsComponentTest extends TestCase
         $expected = 'Foo';
         /** @var MockObject */
         $communicator = Plugin::GetSoCommunicator();
-        $communicator->expects($this->at(0))
+        $communicator->expects($this->exactly(2))
                 ->method('TryGetBanksArray')
-                ->will($this->returnValue(null));
-        $communicator->expects($this->at(1))
-                ->method('TryGetBanksArray')
-                ->will($this->returnValue($expected));
+                ->willReturnOnConsecutiveCalls(null, $expected);
         $this->Eps->GetBanksArray();
         $actual = $this->Eps->GetBanksArray();
         $this->assertEquals($expected, $actual);
@@ -158,7 +160,7 @@ class EpsComponentTest extends TestCase
         $communicator = Plugin::GetSoCommunicator();
         $communicator->expects($this->once())
             ->method('HandleConfirmationUrl')
-            ->will($this->returnCallback($mockSoCommunicatorBehavior));
+            ->willReturnCallback($mockSoCommunicatorBehavior);
 
         $this->Eps->HandleConfirmationUrl($eRemittanceIdentifier, 'raw', 'bar');
 
@@ -203,7 +205,7 @@ class EpsComponentTest extends TestCase
         $communicator->expects($this->once())
                 ->method('HandleConfirmationUrl')
                 ->with($this->isType('callable'), $this->isType('callable'), 'foo', 'bar')
-                ->will($this->returnCallback($mockSoCommunicatorBehavior));
+                ->willReturnCallback($mockSoCommunicatorBehavior);
         $this->Eps->HandleConfirmationUrl('remi', 'foo', 'bar');
 
         $this->assertEventFiredWith('EpsBankTransfer.VitalityCheck',
@@ -221,7 +223,7 @@ class EpsComponentTest extends TestCase
         $communicator = Plugin::GetSoCommunicator();
         $communicator->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
-                ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml')));
+                ->willReturn(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails004.xml'));
         $exception = null;
         try {
             $this->Eps->PaymentRedirect('1234567890ABCDEFG', null, null);
@@ -238,7 +240,7 @@ class EpsComponentTest extends TestCase
         $communicator = Plugin::GetSoCommunicator();
         $communicator->expects($this->once())
                 ->method('SendTransferInitiatorDetails')
-                ->will($this->returnValue(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails000.xml')));
+                ->willReturn(eps_bank_transfer\BaseTest::GetEpsData('BankResponseDetails000.xml'));
 
         $this->Controller->expects($this->once())
                 ->method('redirect')

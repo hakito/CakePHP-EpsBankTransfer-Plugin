@@ -4,7 +4,7 @@ use Cake\Cache\Engine\FileEngine;
 
 return
 [
-    'App' => ['namespace' => 'EpsBankTransfer\Test\TestApp'],
+    'App' => ['namespace' => 'EpsBankTransfer\Test\TestApp', 'encoding' => 'UTF-8'],
 
     /**
      * Configure the cache adapters.

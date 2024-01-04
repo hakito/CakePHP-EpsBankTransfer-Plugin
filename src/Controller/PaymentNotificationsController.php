@@ -5,6 +5,12 @@
  */
 namespace EpsBankTransfer\Controller;
 
+use EpsBankTransfer\Controller\Component\EpsComponent;
+
+/**
+ * @property EpsComponent $Eps
+ * @package EpsBankTransfer\Controller
+ */
 class PaymentNotificationsController extends AppController
 {
 
